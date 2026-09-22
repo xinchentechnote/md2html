@@ -1,6 +1,6 @@
 # md2html
 
-Markdown → 微信公众号排版 HTML 的 CLI 工具：主题化、样式全内联、粘贴不丢格式。设计与方案见 [docs/DESIGN.md](docs/DESIGN.md)。
+Markdown → 微信公众号排版 HTML 的 CLI 工具：主题化、样式全内联、粘贴不丢格式。设计与方案见 [docs/DESIGN.md](docs/DESIGN.md)，执行进度见 [TODO.md](TODO.md)。
 
 ## 使用
 
