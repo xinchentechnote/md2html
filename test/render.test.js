@@ -10,14 +10,18 @@ import { parseMarkdown, nodeText } from '../src/parse.js'
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const sample = readFileSync(path.join(HERE, 'fixtures/sample.md'), 'utf8')
 
+// 快照是纯正文片段，补 charset 头避免浏览器直接打开时中文乱码；写入与对比同源
+const SNAPSHOT_HEAD = '<!-- md2html 回归快照（UTF-8）· 本文件是测试基准，日常预览请用 md2html 生成 -->\n<meta charset="utf-8">\n'
+
 function snapshot(name, html) {
   const file = path.join(HERE, '__snapshots__', `${name}.html`)
+  const content = SNAPSHOT_HEAD + html
   if (!existsSync(file) || process.env.UPDATE_SNAPSHOTS) {
     mkdirSync(path.join(HERE, '__snapshots__'), { recursive: true })
-    writeFileSync(file, html)
+    writeFileSync(file, content)
     return
   }
-  assert.equal(html, readFileSync(file, 'utf8'), `快照不一致: ${name}（UPDATE_SNAPSHOTS=1 npm test 更新）`)
+  assert.equal(content, readFileSync(file, 'utf8'), `快照不一致: ${name}（UPDATE_SNAPSHOTS=1 npm test 更新）`)
 }
 
 for (const t of listThemes()) {
@@ -75,4 +79,38 @@ test('render: 代码块逐行 span 且保留高亮色', () => {
   assert.ok(html.includes('display:block'))
   assert.ok(html.includes('#6A9955'), '注释应有高亮色')
   assert.ok(html.includes('#CE9178'), '字符串应有高亮色')
+})
+
+test('render: 宽表格降级为逐行卡片，窄表格保留 table', () => {
+  const wide = renderMarkdown('| a | b | c | d |\n| --- | --- | --- | --- |\n| 1 | 2 | 3 | 4 |', 'moyu', { footer: false })
+  assert.ok(!wide.html.includes('<table'), '4 列表格应降级')
+  const narrow = renderMarkdown('| a | b | c |\n| --- | --- | --- |\n| 1 | 2 | 3 |', 'moyu', { footer: false })
+  assert.ok(narrow.html.includes('<table'), '3 列表格应保留 table')
+})
+
+test('render: 段落与单元格长词换行保护', () => {
+  const { html } = renderMarkdown('文字 https://a-very-long-example-url.test/with/many/segments', 'moyu', {
+    footer: false,
+  })
+  assert.ok(html.includes('overflow-wrap:break-word'))
+})
+
+test('render: 嵌套多级列表可渲染', () => {
+  const { html } = renderMarkdown('- a\n  - b\n    - c', 'moyu', { footer: false })
+  const bullets = html.match(/border-radius:50%;background:#07C160/g)
+  assert.equal(bullets.length, 3)
+})
+
+test('render: 空文档不抛错且有标题卡兜底', () => {
+  const { html } = renderMarkdown('', 'moyu', { footer: false })
+  assert.ok(html.includes('无标题'))
+})
+
+test('themes: 全部主题变量完整且各具主色', () => {
+  for (const t of listThemes()) {
+    const { html } = renderMarkdown('# t\n\nbody', t.id, { footer: false })
+    assert.ok(html.length > 0, `${t.id} 应可渲染`)
+  }
+  const ids = listThemes().map((t) => t.id)
+  assert.deepEqual(ids, ['moyu', 'redwhite', 'deepblue', 'orange', 'grape', 'peach'])
 })

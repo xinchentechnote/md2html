@@ -21,6 +21,7 @@ cli
   .option('--open', '生成后自动打开预览页')
   .option('--no-footer', '不追加一键三连页脚')
   .option('--list-themes', '列出可用主题')
+  .option('-w, --watch', '监听文件变更并重新生成（单文件）')
   .action(async (files, options) => {
     if (options.listThemes) {
       for (const t of listThemes()) console.log(`${t.id.padEnd(12)}${t.name}  ${t.description || ''}`)
@@ -32,24 +33,45 @@ cli
       return
     }
     const themeId = options.theme || 'moyu'
-    let firstOut = null
-    for (const file of files) {
+    const convertOne = async (file) => {
       const md = file === '-' ? await readStdin() : await readFile(file, 'utf8')
       const base = file === '-' ? 'stdin' : file.replace(/\.md$/i, '')
       const { html, theme, meta } = renderMarkdown(md, themeId, { footer: options.footer })
       if (options.stdout) {
         console.log(html)
-        continue
+        return null
       }
       const out = files.length === 1 && options.out ? options.out : `${base}.html`
       await writeFile(out, previewPage(html, { themeName: theme.name }), 'utf8')
-      if (!firstOut) firstOut = out
       console.error(`✔ ${file} → ${out}（主题: ${theme.name}${meta.title ? ` · ${meta.title}` : ''}）`)
+      return out
+    }
+    let firstOut = null
+    for (const file of files) {
+      const out = await convertOne(file)
+      if (out && !firstOut) firstOut = out
     }
     if (options.open && firstOut) openBrowser(pathToFileURL(path.resolve(firstOut)).href)
+    if (options.watch) {
+      if (options.stdout) {
+        console.error('⚠ --watch 与 --stdout 不兼容，已忽略 --watch')
+      } else if (files.length !== 1 || files[0] === '-') {
+        console.error('⚠ --watch 仅支持监听单个文件')
+      } else {
+        const { watch } = await import('node:fs')
+        let timer = null
+        watch(files[0], () => {
+          clearTimeout(timer)
+          // 防抖：编辑器保存时常触发多次事件
+          timer = setTimeout(() => convertOne(files[0]).catch((e) => console.error(`✖ ${e.message}`)), 200)
+        })
+        console.error(`👁 正在监听 ${files[0]}，保存后自动重新生成（Ctrl+C 退出）`)
+      }
+    }
   })
   .example('md2html article.md')
   .example('md2html article.md -t moyu --open')
+  .example('md2html article.md -w --open   # 监听变更实时预览')
   .example('md2html article.md --stdout | head')
 
 cli.version(pkg.version)

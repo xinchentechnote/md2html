@@ -1,0 +1,43 @@
+/** 各主题共享的默认变量：主题文件只需写 colors 覆盖，其余走默认并可在注册时合并 */
+export const DEFAULT_VARS = {
+  font: {
+    base: '15px',
+    title: '22px',
+    h2: '17px',
+    code: '13px',
+    family:
+      "-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif",
+    mono: "Menlo,Consolas,'Courier New',monospace",
+  },
+  radius: { card: '12px', tag: '6px' },
+  spacing: { paragraph: '10px', block: '24px' },
+  // 代码块统一深色卡片（VSCode Dark+ 配色），所有主题共用
+  codeTokens: {
+    keyword: '#C586C0',
+    built_in: '#4EC9B0',
+    type: '#4EC9B0',
+    literal: '#569CD6',
+    number: '#B5CEA8',
+    string: '#CE9178',
+    regexp: '#D16969',
+    symbol: '#569CD6',
+    title: '#DCDCAA',
+    function: '#DCDCAA',
+    attr: '#9CDCFE',
+    attribute: '#9CDCFE',
+    variable: '#9CDCFE',
+    'template-variable': '#9CDCFE',
+    comment: '#6A9955',
+    doctag: '#6A9955',
+    meta: '#608B4E',
+    tag: '#569CD6',
+    name: '#569CD6',
+    section: '#569CD6',
+    'selector-tag': '#D7BA7D',
+    'selector-class': '#D7BA7D',
+    property: '#9CDCFE',
+    params: '#9CDCFE',
+    operator: '#D4D4D4',
+    punctuation: '#D4D4D4',
+  },
+}

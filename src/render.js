@@ -1,5 +1,6 @@
 import { createLowlight, common } from 'lowlight'
 import { esc, s } from './utils.js'
+import { nodeText } from './parse.js'
 
 const lowlight = createLowlight(common)
 
@@ -68,7 +69,7 @@ const BLOCK = {
     if (ctx.inQuote) {
       return `<p style="${s({ fontSize: f.base, fontWeight: '600', color: c.heading, lineHeight: '1.9', margin: '0', textAlign: 'center' })}">${ctx.inline(node.children)}</p>`
     }
-    return `<p style="${s({ fontSize: f.base, color: ctx.taskDone ? c.muted : c.text, lineHeight: '1.75', margin: ctx.tight ? '0' : `0 0 ${sp.paragraph}`, textAlign: 'justify' })}">${ctx.inline(node.children)}</p>`
+    return `<p style="${s({ fontSize: f.base, color: ctx.taskDone ? c.muted : c.text, lineHeight: '1.75', margin: ctx.tight ? '0' : `0 0 ${sp.paragraph}`, textAlign: 'justify', overflowWrap: 'break-word' })}">${ctx.inline(node.children)}</p>`
   },
 
   blockquote: (node, ctx) => {
@@ -95,9 +96,12 @@ const BLOCK = {
   table: (node, ctx) => {
     const { colors: c, border } = ctx.vars
     const align = node.align || []
-    const cell = (cellNode, index, header) =>
-      `<t${header ? 'h' : 'd'} style="${s({ padding: '8px 12px', border: `1px solid ${border ?? c.border}`, textAlign: align[index] || 'left', fontSize: '14px', color: header ? c.accent : c.text, fontWeight: header ? '700' : '400', background: header ? c.accentLight : 'transparent' })}">${ctx.inline(cellNode.children)}</t${header ? 'h' : 'd'}>`
     const [head, ...body] = node.children
+    const labels = head ? head.children.map((cell) => nodeText(cell)) : []
+    // 公众号正文不支持横向滚动：列数多或表头过长时降级为逐行卡片
+    if (labels.length >= 4 || labels.join('').length >= 14) return wideTableCards(labels, body, ctx)
+    const cell = (cellNode, index, header) =>
+      `<t${header ? 'h' : 'd'} style="${s({ padding: '8px 12px', border: `1px solid ${border ?? c.border}`, textAlign: align[index] || 'left', fontSize: '14px', color: header ? c.accent : c.text, fontWeight: header ? '700' : '400', background: header ? c.accentLight : 'transparent', overflowWrap: 'break-word' })}">${ctx.inline(cellNode.children)}</t${header ? 'h' : 'd'}>`
     const headRow = head ? `<thead><tr>${head.children.map((cellNode, i) => cell(cellNode, i, true)).join('')}</tr></thead>` : ''
     const bodyRows = body
       .map((row) => `<tr>${row.children.map((cellNode, i) => cell(cellNode, i, false)).join('')}</tr>`)
@@ -166,11 +170,11 @@ function orderedList(node, ctx) {
     .map((item, i) =>
       `<section style="${s({ display: 'flex', gap: '10px', alignItems: 'flex-start', background: c.cardBg, borderRadius: '8px', padding: '12px 14px', marginBottom: '8px' })}">` +
       `<span style="${s({ flexShrink: 0, width: '20px', height: '20px', lineHeight: '20px', borderRadius: '50%', background: c.accent, color: '#FFFFFF', fontSize: '12px', fontWeight: '700', textAlign: 'center' })}">${start + i}</span>` +
-      `<section style="${s({ flex: '1', minWidth: '0', fontSize: f.base, color: c.text, lineHeight: '1.7' })}">${listBody(item, ctx)}</section>` +
+      `<section style="${s({ flex: 1, minWidth: 0, fontSize: f.base, color: c.text, lineHeight: '1.7' })}">${listBody(item, ctx)}</section>` +
       `</section>`,
     )
     .join('')
-  return `<section style="${s({ margin: '12px 0 4px' })}">${items}</section>`
+  return `<section style="${s({ margin: '12px 0 4px', marginLeft: ctx.listDepth ? '1.5em' : '' })}">${items}</section>`
 }
 
 function unorderedList(node, ctx) {
@@ -180,11 +184,11 @@ function unorderedList(node, ctx) {
       (item) =>
         `<section style="${s({ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '6px' })}">` +
         `<span style="${s({ flexShrink: 0, width: '6px', height: '6px', borderRadius: '50%', background: c.accent, marginTop: '9px' })}"></span>` +
-        `<section style="${s({ flex: '1', minWidth: '0', fontSize: f.base, color: c.text, lineHeight: '1.7' })}">${listBody(item, ctx)}</section>` +
+        `<section style="${s({ flex: 1, minWidth: 0, fontSize: f.base, color: c.text, lineHeight: '1.7' })}">${listBody(item, ctx)}</section>` +
         `</section>`,
     )
     .join('')
-  return `<section style="${s({ margin: '10px 0 4px' })}">${items}</section>`
+  return `<section style="${s({ margin: '10px 0 4px', marginLeft: ctx.listDepth ? '1.5em' : '' })}">${items}</section>`
 }
 
 function taskList(node, ctx) {
@@ -198,11 +202,31 @@ function taskList(node, ctx) {
         `</section>`
     })
     .join('')
-  return `<section style="${s({ margin: '10px 0 4px' })}">${items}</section>`
+  return `<section style="${s({ margin: '10px 0 4px', marginLeft: ctx.listDepth ? '1.5em' : '' })}">${items}</section>`
 }
 
 function listBody(item, ctx) {
-  return item.children.map((n) => blockNode(n, deriveCtx(ctx, { tight: true }))).join('')
+  return item.children
+    .map((n) => blockNode(n, deriveCtx(ctx, { tight: true, listDepth: (ctx.listDepth || 0) + 1 })))
+    .join('')
+}
+
+/** 宽表降级：每行一张卡，表头作为字段标签（公众号不支持横向滚动） */
+function wideTableCards(labels, rows, ctx) {
+  const { colors: c } = ctx.vars
+  const cards = rows
+    .map((row) => {
+      const fields = row.children
+        .map((cellNode, i) =>
+          `<section style="${s({ display: 'flex', gap: '8px', fontSize: '14px', lineHeight: '1.6', marginBottom: i === row.children.length - 1 ? '0' : '4px' })}">` +
+          `<span style="${s({ flexShrink: 0, minWidth: '4em', fontSize: '12px', fontWeight: '700', color: c.accent, paddingTop: '2px' })}">${esc(labels[i] || '')}</span>` +
+          `<section style="${s({ flex: '1', minWidth: '0', color: c.text, overflowWrap: 'break-word' })}">${ctx.inline(cellNode.children)}</section>` +
+          `</section>`)
+        .join('')
+      return `<section style="${s({ background: c.cardBg, borderRadius: '8px', padding: '10px 14px', marginBottom: '8px' })}">${fields}</section>`
+    })
+    .join('')
+  return `<section style="${s({ margin: '16px 0' })}">${cards}</section>`
 }
 
 /** 语法高亮 → 逐行 span；跨行 token 通过颜色栈携带，保证行结构在公众号不丢 */
