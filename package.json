@@ -1,0 +1,35 @@
+{
+  "name": "md2html",
+  "version": "0.1.0",
+  "description": "Markdown → 微信公众号排版 HTML CLI（样式全内联，可直接复制粘贴发布）",
+  "type": "module",
+  "bin": {
+    "md2html": "bin/md2html.js"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\"",
+    "update-snapshots": "UPDATE_SNAPSHOTS=1 node --test \"test/**/*.test.js\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "markdown",
+    "wechat",
+    "公众号",
+    "html",
+    "cli"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "cac": "^7.0.0",
+    "lowlight": "^3.3.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5"
+  }
+}
