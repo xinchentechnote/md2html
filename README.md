@@ -11,10 +11,13 @@ npm link            # 全局命令 md2html
 md2html article.md                  # → article.html（带「复制到公众号」按钮的预览页）
 md2html article.md -t moyu --open   # 指定主题并自动打开预览
 md2html article.md -w --open        # 监听变更实时重新生成
+md2html ui article.md -t deepblue   # 浏览器编辑器：编辑+实时预览+⌘S保存+一键复制
 md2html article.md --stdout         # 仅输出正文 HTML 片段
 md2html article.md --no-footer      # 不追加一键三连页脚
 md2html --list-themes               # 查看可用主题
 ```
+
+浏览器编辑器（`md2html ui`）：左编辑右预览、主题即时切换（记忆在浏览器）、⌘S 保存回原文件、"复制到公众号"一键富文本复制；服务仅绑定 127.0.0.1，只读写启动时指定的那个文件。
 
 可用主题（6 套）：`moyu` 摸鱼绿 / `redwhite` 红白色系 / `deepblue` 深海蓝 / `orange` 活力橙 / `grape` 暗夜紫 / `peach` 蜜桃粉。
 

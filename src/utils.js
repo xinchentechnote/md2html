@@ -1,5 +1,3 @@
-import { spawn } from 'node:child_process'
-
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
 
 /** HTML 文本转义（属性与文本节点通用） */
@@ -24,12 +22,4 @@ const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', '
 export function formatDate(date = new Date()) {
   const d = date instanceof Date ? date : new Date(date)
   return `${String(d.getDate()).padStart(2, '0')} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
-}
-
-export function openBrowser(url) {
-  const cmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'cmd' : 'xdg-open'
-  const args = process.platform === 'win32' ? ['/c', 'start', '', url] : [url]
-  const child = spawn(cmd, args, { stdio: 'ignore', detached: true })
-  child.on('error', () => {})
-  child.unref()
 }

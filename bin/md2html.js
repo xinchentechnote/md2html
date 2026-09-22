@@ -6,12 +6,27 @@ import { createRequire } from 'node:module'
 import { cac } from 'cac'
 import { renderMarkdown, listThemes } from '../src/index.js'
 import { previewPage } from '../src/preview.js'
-import { openBrowser } from '../src/utils.js'
+import { openBrowser } from '../src/open-browser.js'
 
 const require = createRequire(import.meta.url)
 const pkg = require('../package.json')
 
 const cli = cac('md2html')
+
+cli
+  .command('ui [file]', '浏览器编辑器：编辑 md 实时预览、⌘S 保存、一键复制')
+  .option('-t, --theme <name>', '默认主题（页面内可随时切换）')
+  .option('--no-open', '启动后不自动打开浏览器')
+  .action(async (file, options) => {
+    const { startEditorServer } = await import('../src/ui-server.js')
+    const { url } = await startEditorServer({
+      file: file ? path.resolve(file) : undefined,
+      theme: options.theme,
+    })
+    console.error(`✔ 编辑器已启动: ${url}（Ctrl+C 退出）`)
+    if (options.open !== false) openBrowser(url)
+  })
+  .example('md2html ui article.md -t deepblue')
 
 cli
   .command('[...files]', 'Markdown → 微信公众号排版 HTML')

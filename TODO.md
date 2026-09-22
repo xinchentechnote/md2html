@@ -17,11 +17,12 @@
 纯静态单文件版作为绿色补充（Safari 无 File System Access API，保存受限）；
 未来要桌面窗口用 Tauri 包静态页，逻辑零重写。
 
-- [ ] M4a `md2html ui [file]`：`node:http` 本地服务（~80 行，零依赖）：`GET /` 编辑器页 / `GET|PUT /api/file` 读写文件
-- [ ] 页面：左 textarea 编辑 + 右实时预览（debounce 300ms，core 浏览器端直跑）+ 主题下拉 + 复制按钮（复用现有 Range+execCommand 机制）+ ⌘S 保存
-- [ ] 预览塞 div（输出全内联样式，无污染）
+- [x] M4a `md2html ui [file]`：`node:http` 本地服务（零依赖框架）：`GET /` 编辑器页 / `GET|PUT /api/file` 读写文件（已完成并浏览器端到端验证：实时预览/保存回写/复制反馈）
+- [x] 页面：左 textarea 编辑 + 右实时预览（debounce 300ms，core 浏览器端直跑）+ 主题下拉（localStorage 记忆）+ 复制按钮（Range+execCommand）+ ⌘S 保存 + Tab 缩进
+- [x] 预览塞 div（输出全内联样式，无污染）
 - [ ] M4b（可选）`--static`：esbuild 打包单文件 editor.html 绿色版（File System Access API，Chrome/Edge 可保存）
 - [ ] 编辑器升级（可选）：CodeMirror 6 语法高亮（+~300KB）
+- [ ] 可选增强：多文件/最近文件列表、localStorage 草稿、自定义主题即时预览
 
 ## 远期（M5 · 一行命令进公众号草稿箱）
 
