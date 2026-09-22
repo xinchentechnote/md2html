@@ -10,11 +10,18 @@
   - [ ] 先调研公众号对 `data:` URI 与外链图片的实际处理，确定图片落地方式
 - [ ] CLI：`--theme` 与 frontmatter theme 的冲突提示
 
-## 之后（M4 · UI 编辑器）
+## 之后（M4 · 浏览器编辑器，实时预览）
 
-- [ ] esbuild 打包单文件 `editor.html`：左编辑右预览 + 主题下拉 + 复制按钮
-- [ ] 双击即用、离线可用、无服务端（core 纯函数零改动复用）
-- [ ] 渲染 debounce 300ms；可选 localStorage 草稿
+选型结论（2026-09）：不做原生桌面 App（Tauri/Electron 成本在包装不在功能）；
+主路线 = **CLI 起超小本地服务 + 浏览器标签当编辑器**（文件保存闭环、零新依赖）；
+纯静态单文件版作为绿色补充（Safari 无 File System Access API，保存受限）；
+未来要桌面窗口用 Tauri 包静态页，逻辑零重写。
+
+- [ ] M4a `md2html ui [file]`：`node:http` 本地服务（~80 行，零依赖）：`GET /` 编辑器页 / `GET|PUT /api/file` 读写文件
+- [ ] 页面：左 textarea 编辑 + 右实时预览（debounce 300ms，core 浏览器端直跑）+ 主题下拉 + 复制按钮（复用现有 Range+execCommand 机制）+ ⌘S 保存
+- [ ] 预览塞 div（输出全内联样式，无污染）
+- [ ] M4b（可选）`--static`：esbuild 打包单文件 editor.html 绿色版（File System Access API，Chrome/Edge 可保存）
+- [ ] 编辑器升级（可选）：CodeMirror 6 语法高亮（+~300KB）
 
 ## 远期（M5 · 一行命令进公众号草稿箱）
 

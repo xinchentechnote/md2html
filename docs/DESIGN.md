@@ -223,12 +223,13 @@ macOS 附加路径（二期可选）：`textutil -convert rtf -stdout | pbcopy` 
 
 ---
 
-## 10. 二期：UI 编辑器
+## 10. 二期：UI 编辑器（选型：本地服务 + 浏览器，非桌面 App）
 
-- `md2html ui`（或直接打开 `dist/editor.html`）：`esbuild` 把 core + 页面打成**单 HTML 文件**，双击即用、离线可用、零服务端；
-- 布局：左侧 textarea（等宽字体、字数统计）+ 右侧预览（677px 列）+ 顶部主题下拉 + "复制到公众号"按钮——对齐参考站形态，功能一致即可；
-- 渲染 debounce 300ms；core 因纯函数特性**一行不改**地运行在浏览器；
-- 后续可选增强：本地草稿 localStorage、自定义主题编辑器（编辑 designVars 即时预览）。
+- 主路线 **M4a**：`md2html ui [file]` 启动 `node:http` 超小本地服务（约 80 行，零新依赖）并自动打开浏览器——`GET /` 编辑器页、`GET|PUT /api/file` 读写文件；
+- 页面：左侧编辑区（v1 用原生 textarea，可选升级 CodeMirror 6）+ 右侧预览（debounce 300ms 调 `renderMarkdown()`，core 在浏览器端直跑）+ 主题下拉 + 复制按钮（复用预览页的 Range + execCommand 机制）+ ⌘S 保存；
+- 预览容器用 div 而非 iframe：输出是全内联样式，不会污染页面，复制逻辑同源；
+- 可选 **M4b**（`--static`）：esbuild 打包单文件 `editor.html` 绿色版，Chrome/Edge 经 File System Access API 支持打开保存（Safari 不支持该 API，仅可导入导出）；
+- 不做 Electron/Tauri 原生壳：成本在包装而非功能；未来若需桌面窗口，用 Tauri 包 M4b 静态页即可，逻辑零重写。
 
 ---
 
