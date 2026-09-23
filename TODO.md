@@ -50,6 +50,14 @@
 
 - [ ] 6 套主题 × 公众号真实粘贴人工 checklist（DESIGN §11 十项清单，需公众号后台）
 
+## 可执行程序打包（GitHub Actions）
+
+- [x] `scripts/build-bin.mjs`：编辑器 bundle 内嵌（摆脱运行时 esbuild 原生依赖）→ CJS bundle → pkg 交叉编译（支持目标过滤参数）
+- [x] `scripts/smoke-test.mjs`：二进制冒烟测试（version/主题/转换/ui 服务含内嵌 bundle 与保存闭环）
+- [x] `.github/workflows/build.yml`：4 平台矩阵（macos-arm64 原生验证+交叉 x64 / linux-x64 / linux-arm64 / win-x64），测试→打包→冒烟→上传 artifact；`v*` tag 自动挂 GitHub Release
+- [ ] 推送到 GitHub 后跑通首次 CI（本仓库尚未 git init）
+- [ ] Windows Defender 误报观察（pkg 产物常见，必要时加签名或改用 Node SEA/自编译）
+
 ## 可选（不阻塞）
 
 - [ ] npm 发布（包名 `md2html` 大概率被占，备选 `md2html-cli`，bin 仍叫 `md2html`）

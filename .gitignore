@@ -1,4 +1,6 @@
 node_modules/
 *.html
 !test/__snapshots__/*.html
+build/
+dist/
 .DS_Store

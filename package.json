@@ -12,7 +12,8 @@
   },
   "scripts": {
     "test": "node --test \"test/**/*.test.js\"",
-    "update-snapshots": "UPDATE_SNAPSHOTS=1 node --test \"test/**/*.test.js\""
+    "update-snapshots": "UPDATE_SNAPSHOTS=1 node --test \"test/**/*.test.js\"",
+    "build:bin": "node scripts/build-bin.mjs"
   },
   "engines": {
     "node": ">=18"
@@ -32,5 +33,8 @@
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
     "unified": "^11.0.5"
+  },
+  "devDependencies": {
+    "@yao-pkg/pkg": "^6.22.0"
   }
 }

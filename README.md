@@ -28,6 +28,11 @@ md2html --list-themes               # 查看可用主题
 ```bash
 npm test                      # 快照 + 单测
 npm run update-snapshots      # 结构有意变更后更新快照
+npm run build:bin             # 本机打包全部 5 个平台二进制到 dist/
+npm run build:bin -- macos-arm64 win-x64   # 只打指定目标
+node scripts/smoke-test.mjs macos-arm64    # 二进制冒烟测试
 ```
 
-结构：`src/`（parse → transform → render 纯函数管线）、`themes/`（designVars 色板 + 可选组件覆盖）、`bin/`（CLI 薄壳）。
+结构：`src/`（parse → transform → render 纯函数管线）、`themes/`（designVars 色板 + 可选组件覆盖）、`bin/`（CLI 薄壳）、`scripts/`（打包与冒烟测试）。
+
+CI（`.github/workflows/build.yml`）：推送后自动在 macOS / Linux(x64,arm64) / Windows 原生 runner 上跑测试、打包并冒烟验证，产物上传 artifact；打 `v*` tag 自动发布 GitHub Release。

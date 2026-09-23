@@ -1,7 +1,7 @@
 import http from 'node:http'
 import { readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
-import { build } from 'esbuild'
+import embeddedEditor from './editor/embedded.js'
 
 const PAGE = `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -55,16 +55,11 @@ main{flex:1;display:flex;min-height:0}
  * GET /api/state 初始内容、PUT /api/file 保存。
  */
 export async function startEditorServer({ file, theme } = {}) {
-  const bundled = await build({
-    entryPoints: [fileURLToPath(new URL('./editor/main.js', import.meta.url))],
-    bundle: true,
-    format: 'iife',
-    platform: 'browser',
-    minify: true,
-    write: false,
-    logLevel: 'silent',
-  })
-  const js = bundled.outputFiles[0].text
+  const js =
+    embeddedEditor ??
+    (await bundleEditorRuntime().catch((err) => {
+      throw new Error(`编辑器 bundle 不可用（内嵌为空且运行时打包失败）: ${err.message}`)
+    }))
 
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://127.0.0.1')
@@ -101,4 +96,19 @@ export async function startEditorServer({ file, theme } = {}) {
 
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
   return { server, url: `http://127.0.0.1:${server.address().port}` }
+}
+
+/** 开发模式：esbuild 懒加载（只在未内嵌 bundle 时执行；pkg 打包产物永远走内嵌） */
+async function bundleEditorRuntime() {
+  const { build } = await import('esbuild')
+  const bundled = await build({
+    entryPoints: [fileURLToPath(new URL('./editor/main.js', import.meta.url))],
+    bundle: true,
+    format: 'iife',
+    platform: 'browser',
+    minify: true,
+    write: false,
+    logLevel: 'silent',
+  })
+  return bundled.outputFiles[0].text
 }
