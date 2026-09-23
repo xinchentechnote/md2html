@@ -4,11 +4,13 @@ import { build } from 'esbuild'
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 const pkg = require('../package.json')
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname))
+// Windows 上 new URL().pathname 是 /D:/...，必须用 fileURLToPath 转换，否则拼出 D:\D:\...
+const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const wanted = process.argv.slice(2)
 
 const TARGETS = [
