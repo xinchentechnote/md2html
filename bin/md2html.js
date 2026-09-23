@@ -2,14 +2,13 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { createRequire } from 'node:module'
 import { cac } from 'cac'
 import { renderMarkdown, listThemes } from '../src/index.js'
 import { previewPage } from '../src/preview.js'
 import { openBrowser } from '../src/open-browser.js'
-
-const require = createRequire(import.meta.url)
-const pkg = require('../package.json')
+// JSON 导入会被 esbuild 构建时内联。不能用 createRequire(import.meta.url)：
+// 那在 pkg 打包产物的 CJS 沙箱里 import.meta.url 为 undefined，启动即崩
+import pkg from '../package.json' with { type: 'json' }
 
 const cli = cac('md2html')
 

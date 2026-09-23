@@ -16,7 +16,7 @@
     "build:bin": "node scripts/build-bin.mjs"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "keywords": [
     "markdown",
