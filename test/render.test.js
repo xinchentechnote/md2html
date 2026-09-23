@@ -21,7 +21,9 @@ function snapshot(name, html) {
     writeFileSync(file, content)
     return
   }
-  assert.equal(content, readFileSync(file, 'utf8'), `快照不一致: ${name}（UPDATE_SNAPSHOTS=1 npm test 更新）`)
+  // 归一化行尾：抵御 Windows checkout 的 autocrlf（另有 .gitattributes 强制 LF 双保险）
+  const baseline = readFileSync(file, 'utf8').replace(/\r\n/g, '\n')
+  assert.equal(content, baseline, `快照不一致: ${name}（UPDATE_SNAPSHOTS=1 npm test 更新）`)
 }
 
 for (const t of listThemes()) {

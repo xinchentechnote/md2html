@@ -58,7 +58,7 @@ try {
   const pkgBin = path.join(ROOT, '../node_modules/.bin', process.platform === 'win32' ? 'pkg.cmd' : 'pkg')
   for (const [target, name, isWin] of targets) {
     const out = path.join(ROOT, '../dist', name + (isWin ? '.exe' : ''))
-    execFileSync(pkgBin, ['build/md2html.cjs', '--target', target, '--output', out, '--no-bytecode'], {
+    execFileSync(pkgBin, ['build/md2html.cjs', '--target', target, '--output', out], {
       cwd: path.join(ROOT, '..'),
       stdio: 'inherit',
     })

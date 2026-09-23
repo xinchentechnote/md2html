@@ -1,0 +1,2 @@
+# 统一 LF：Windows runner 的 autocrlf 会把快照基准 checkout 成 CRLF 导致测试失败
+* text=auto eol=lf
