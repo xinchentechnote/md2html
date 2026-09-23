@@ -30,7 +30,7 @@ cli
 
 cli
   .command('[...files]', 'Markdown → 微信公众号排版 HTML')
-  .option('-t, --theme <name>', '主题 id，默认 moyu')
+  .option('-t, --theme <name>', '主题 id，默认 deepblue')
   .option('-o, --out <file>', '输出路径（单文件时有效，默认同名 .html）')
   .option('--stdout', '仅输出正文 HTML 片段（管道友好）')
   .option('--open', '生成后自动打开预览页')
@@ -47,7 +47,7 @@ cli
       process.exitCode = 1
       return
     }
-    const themeId = options.theme || 'moyu'
+    const themeId = options.theme || 'deepblue'
     const convertOne = async (file) => {
       const md = file === '-' ? await readStdin() : await readFile(file, 'utf8')
       const base = file === '-' ? 'stdin' : file.replace(/\.md$/i, '')
@@ -85,7 +85,7 @@ cli
     }
   })
   .example('md2html article.md')
-  .example('md2html article.md -t moyu --open')
+  .example('md2html article.md -t deepblue --open')
   .example('md2html article.md -w --open   # 监听变更实时预览')
   .example('md2html article.md --stdout | head')
 
