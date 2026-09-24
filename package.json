@@ -35,7 +35,6 @@
     "unified": "^11.0.5"
   },
   "devDependencies": {
-    "@yao-pkg/pkg": "^6.22.0",
-    "pkg": "^5.8.1"
+    "@yao-pkg/pkg": "^6.22.0"
   }
 }

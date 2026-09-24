@@ -54,12 +54,12 @@
 
 - [x] `scripts/build-bin.mjs`：编辑器 bundle 内嵌（摆脱运行时 esbuild 原生依赖）→ CJS bundle → pkg 交叉编译（支持目标过滤参数）
 - [x] `scripts/smoke-test.mjs`：二进制冒烟测试（version/主题/转换/ui 服务含内嵌 bundle 与保存闭环）
-- [x] `.github/workflows/build.yml`：矩阵（macos-arm64 原生验证+交叉 x64 / linux-x64 / linux-arm64），测试→打包→冒烟→上传 artifact；`v*` tag 自动挂 GitHub Release。**Windows 暂时注释**（恢复：取消 windows-latest 项注释）
+- [x] `.github/workflows/build.yml`：矩阵（macos-arm64 原生验证+交叉 x64 / linux-x64 / linux-arm64 / win-x64），测试→打包→冒烟→上传 artifact；`v*` tag 自动挂 GitHub Release
 - [x] CI 踩坑修复记录：`--no-bytecode` 移除（pkg 报错）、`.gitattributes` LF + 快照行尾归一化（Windows CRLF）、`createRequire(import.meta.url)` 改 JSON 导入（pkg CJS 沙箱 import.meta.url 为 undefined）、`fileURLToPath`（Windows 路径盘符翻倍）
 - [x] 本地 macos-arm64：打包 + 全项冒烟通过（--version/主题/转换/ui 内嵌 bundle 与保存闭环）
 - [x] CentOS 7 兼容：linux-x64 改用 `node22-linuxstatic-x64`（musl 全静态，摆脱 glibc≥2.28 限制；Node18+ 官方基座在 glibc 2.17 报 GLIBC not found）
-- [x] Windows 恢复：`win-x64`（node22 基座，Win10+）+ `win7-x64`（node14 基座，vercel/pkg 5.8.1 打包——Node 14 是最后干净支持 Win7 的版本，18+ 完全不兼容）；CJS bundle 语法目标降到 es2020
-- [ ] win7-x64 在真实 Win7 机器验证（CI 无 Win7 runner，只能本机实测）
+- [x] Windows 恢复：`win-x64`（node22 基座，**仅 Win10+**）
+- [x] **Win7 支持已放弃**（2026-09 决策）：Node 18+ 官方构建要求 Win10+；干净支持 Win7 的 node14 旧基座依赖已停维护的 vercel/pkg 5.8.1，工具链验证成本高且产物无安全更新。确有 Win7 场景的备选：Win7 上装 Node 14 + 以 npm 包方式运行
 - [ ] Windows Defender 误报观察（pkg 产物常见，必要时加签名或改用 Node SEA/自编译）
 
 ## 可选（不阻塞）

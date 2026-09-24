@@ -34,12 +34,11 @@ jobs:
             targets: linux-arm64
             smoke: linux-arm64
             artifact: linux-arm64
-          # win-x64 = Win10+（node22 基座）
-          # win7-x64 / win7-x86 = Win7 SP1+（node 14.17.6 官方基座，vercel/pkg 打包）；
-          # CI runner 是新版 Windows，三个产物都能跑冒烟，真实 Win7 兼容需本机验证
+          # win-x64 = Win10+（node22 基座）。Win7 已放弃支持：
+          # Node 18+ 官方构建要求 Win10+，旧基座（node14）工具链不再维护
           - os: windows-latest
-            targets: win-x64 win7-x64 win7-x86
-            smoke: win-x64 win7-x64 win7-x86
+            targets: win-x64
+            smoke: win-x64
             artifact: windows
     runs-on: ${{ matrix.os }}
     steps:
