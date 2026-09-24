@@ -16,7 +16,9 @@ const wanted = process.argv.slice(2)
 const TARGETS = [
   ['node22-macos-arm64', `md2html-v${pkg.version}-macos-arm64`, false],
   ['node22-macos-x64', `md2html-v${pkg.version}-macos-x64`, false],
-  ['node22-linux-x64', `md2html-v${pkg.version}-linux-x64`, false],
+  // linuxstatic = musl 全静态链接，不依赖系统 glibc（Node18+ 官方基座要 glibc≥2.28，
+  // CentOS 7 只有 2.17 会报 GLIBC not found）；产物可在 CentOS 7 / Alpine 等任何发行版运行
+  ['node22-linuxstatic-x64', `md2html-v${pkg.version}-linux-x64`, false],
   ['node22-linux-arm64', `md2html-v${pkg.version}-linux-arm64`, false],
   ['node22-win-x64', `md2html-v${pkg.version}-win-x64`, true],
 ]

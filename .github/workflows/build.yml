@@ -24,6 +24,8 @@ jobs:
           - os: ubuntu-latest
             targets: linux-x64
             verify: linux-x64
+            # linux-x64 产物为 musl 全静态（linuxstatic），CentOS 7 / Alpine 等
+            # 老 glibc 系统可直接运行；CI 里跑的是 Ubuntu glibc 环境同样兼容
           # linux arm64 真机验证；公共仓库免费，私有仓库不可用时：
           # 删除本项并把上一项 targets 改为 "linux-x64 linux-arm64"（交叉产出，不验证 arm）
           - os: ubuntu-24.04-arm

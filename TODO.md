@@ -57,6 +57,7 @@
 - [x] `.github/workflows/build.yml`：矩阵（macos-arm64 原生验证+交叉 x64 / linux-x64 / linux-arm64），测试→打包→冒烟→上传 artifact；`v*` tag 自动挂 GitHub Release。**Windows 暂时注释**（恢复：取消 windows-latest 项注释）
 - [x] CI 踩坑修复记录：`--no-bytecode` 移除（pkg 报错）、`.gitattributes` LF + 快照行尾归一化（Windows CRLF）、`createRequire(import.meta.url)` 改 JSON 导入（pkg CJS 沙箱 import.meta.url 为 undefined）、`fileURLToPath`（Windows 路径盘符翻倍）
 - [x] 本地 macos-arm64：打包 + 全项冒烟通过（--version/主题/转换/ui 内嵌 bundle 与保存闭环）
+- [x] CentOS 7 兼容：linux-x64 改用 `node22-linuxstatic-x64`（musl 全静态，摆脱 glibc≥2.28 限制；Node18+ 官方基座在 glibc 2.17 报 GLIBC not found）
 - [ ] Windows 恢复并验证（待 fileURLToPath 修复在 CI 确认后取消注释）
 - [ ] Windows Defender 误报观察（pkg 产物常见，必要时加签名或改用 Node SEA/自编译）
 
