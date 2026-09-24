@@ -31,10 +31,12 @@ jobs:
           - os: ubuntu-24.04-arm
             targets: linux-arm64
             verify: linux-arm64
-          # 暂时注释 Windows（fileURLToPath 修复待验证，恢复时取消注释即可）：
-          # - os: windows-latest
-          #   targets: win-x64
-          #   verify: win-x64
+          # win-x64 = Win10+（node22 基座）；win7-x64 = Win7+（node14 基座，vercel/pkg 打包）
+          # CI runner 是新版 Windows，两个产物都能跑冒烟；真实 Win7 兼容需本机验证
+          - os: windows-latest
+            targets: win-x64 win7-x64
+            verify: win-x64
+            verify2: win7-x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +48,8 @@ jobs:
       - run: npm test
       - run: node scripts/build-bin.mjs ${{ matrix.targets }}
       - run: node scripts/smoke-test.mjs ${{ matrix.verify }}
+      - if: matrix.verify2
+        run: node scripts/smoke-test.mjs ${{ matrix.verify2 }}
       - uses: actions/upload-artifact@v4
         with:
           name: md2html-${{ matrix.verify }}

@@ -13,14 +13,18 @@ const pkg = require('../package.json')
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const wanted = process.argv.slice(2)
 
+// engine: 'yao' = @yao-pkg/pkg 6（node18-24 基座）；'pkg5' = vercel/pkg 5.8.1（node14/16 旧基座）
 const TARGETS = [
-  ['node22-macos-arm64', `md2html-v${pkg.version}-macos-arm64`, false],
-  ['node22-macos-x64', `md2html-v${pkg.version}-macos-x64`, false],
+  ['node22-macos-arm64', `md2html-v${pkg.version}-macos-arm64`, false, 'yao'],
+  ['node22-macos-x64', `md2html-v${pkg.version}-macos-x64`, false, 'yao'],
   // linuxstatic = musl 全静态链接，不依赖系统 glibc（Node18+ 官方基座要 glibc≥2.28，
   // CentOS 7 只有 2.17 会报 GLIBC not found）；产物可在 CentOS 7 / Alpine 等任何发行版运行
-  ['node22-linuxstatic-x64', `md2html-v${pkg.version}-linux-x64`, false],
-  ['node22-linux-arm64', `md2html-v${pkg.version}-linux-arm64`, false],
-  ['node22-win-x64', `md2html-v${pkg.version}-win-x64`, true],
+  ['node22-linuxstatic-x64', `md2html-v${pkg.version}-linux-x64`, false, 'yao'],
+  ['node22-linux-arm64', `md2html-v${pkg.version}-linux-arm64`, false, 'yao'],
+  // Win10+：node22 基座
+  ['node22-win-x64', `md2html-v${pkg.version}-win-x64`, true, 'yao'],
+  // Win7：Node 14 是最后干净支持 Win7 的版本（18+ 完全不兼容），必须走 pkg5 旧基座
+  ['node14-win-x64', `md2html-v${pkg.version}-win7-x64`, true, 'pkg5'],
 ]
 
 const EMBEDDED = path.join(ROOT, '../src/editor/embedded.js')
@@ -47,22 +51,27 @@ const editor = await build({
 writeFileSync(EMBEDDED, `export default ${JSON.stringify(editor.outputFiles[0].text)}\n`)
 
 try {
-  // 2) CLI → 单文件 CJS bundle（esbuild 保持 external：打包产物走内嵌路径，永不加载）
+  // 2) CLI → 单文件 CJS bundle（esbuild 保持 external：打包产物走内嵌路径，永不加载；
+  //    target es2020 兼容 node14 基座——Win7 产物用的旧运行时）
   await build({
     entryPoints: [path.join(ROOT, '../bin/md2html.js')],
     bundle: true,
     platform: 'node',
     format: 'cjs',
+    target: 'es2020',
     external: ['esbuild'],
     outfile: path.join(ROOT, '../build/md2html.cjs'),
     logLevel: 'silent',
   })
 
-  // 3) 交叉编译
-  const pkgBin = path.join(ROOT, '../node_modules/.bin', process.platform === 'win32' ? 'pkg.cmd' : 'pkg')
-  for (const [target, name, isWin] of targets) {
+  // 3) 交叉编译（两个 pkg 引擎按路径调用，避免 .bin 名称冲突）
+  const ENGINES = {
+    yao: path.join(ROOT, '../node_modules/@yao-pkg/pkg/lib-es5/bin.js'),
+    pkg5: path.join(ROOT, '../node_modules/pkg/lib-es5/bin.js'),
+  }
+  for (const [target, name, isWin, engine] of targets) {
     const out = path.join(ROOT, '../dist', name + (isWin ? '.exe' : ''))
-    execFileSync(pkgBin, ['build/md2html.cjs', '--target', target, '--output', out], {
+    execFileSync(process.execPath, [ENGINES[engine], 'build/md2html.cjs', '--target', target, '--output', out], {
       cwd: path.join(ROOT, '..'),
       stdio: 'inherit',
     })
