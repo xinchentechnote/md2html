@@ -7,22 +7,21 @@ import { execFileSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createRequire } from 'node:module'
 
-const require = createRequire(import.meta.url)
-const pkg = require('../package.json')
 // Windows 上 new URL().pathname 是 /D:/...，必须用 fileURLToPath 转换，否则拼出 D:\D:\...
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const wanted = process.argv.slice(2)
 
+// 产物名不带版本号：版本由 git tag / GitHub Release 承载，文件名只标平台，
+// 彻底避免 package.json 与 tag 版本错位问题
 const TARGETS = [
-  ['node22-macos-arm64', `md2html-v${pkg.version}-macos-arm64`, false],
-  ['node22-macos-x64', `md2html-v${pkg.version}-macos-x64`, false],
+  ['node22-macos-arm64', 'md2html-macos-arm64', false],
+  ['node22-macos-x64', 'md2html-macos-x64', false],
   // linuxstatic = musl 全静态链接，不依赖系统 glibc（Node18+ 官方基座要 glibc≥2.28，
   // CentOS 7 只有 2.17 会报 GLIBC not found）；产物可在 CentOS 7 / Alpine 等任何发行版运行
-  ['node22-linuxstatic-x64', `md2html-v${pkg.version}-linux-x64`, false],
-  ['node22-linux-arm64', `md2html-v${pkg.version}-linux-arm64`, false],
-  ['node22-win-x64', `md2html-v${pkg.version}-win-x64`, true],
+  ['node22-linuxstatic-x64', 'md2html-linux-x64', false],
+  ['node22-linux-arm64', 'md2html-linux-arm64', false],
+  ['node22-win-x64', 'md2html-win-x64', true],
 ]
 
 mkdirSync(path.join(ROOT, '../build'), { recursive: true })
