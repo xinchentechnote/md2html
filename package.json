@@ -1,6 +1,6 @@
 {
   "name": "md2html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Markdown → 微信公众号排版 HTML CLI（样式全内联，可直接复制粘贴发布）",
   "type": "module",
   "bin": {
