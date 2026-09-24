@@ -1,8 +1,10 @@
 // 打包管线：编辑器浏览器 bundle 内嵌 → CLI 打成 CJS → 交叉编译平台目标。
-// 用法：npm run build:bin [-- macos-arm64 win-x64 ...]  不传 = 全部 5 个目标。
+// 用法：npm run build:bin [-- macos-arm64 win-x64 ...]  不传 = 全部目标。
 import { build } from 'esbuild'
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync, existsSync, createWriteStream, chmodSync } from 'node:fs'
+import { Readable } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
@@ -13,30 +15,51 @@ const pkg = require('../package.json')
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const wanted = process.argv.slice(2)
 
-// engine: 'yao' = @yao-pkg/pkg 6（node18-24 基座）；'pkg5' = vercel/pkg 5.8.1（node14/16 旧基座）
+// Win7 基座版本：Node 14 是最后支持 Win7 的大版本，但晚期 14.x 构建依赖 Win8+ API，
+// 14.17.6 是社区确认的最后干净版本；pkg-fetch 现成的 node14 基座是 14.21.3 不可用，
+// 因此直接从 nodejs.org 拉官方 exe 作为自定义基座交给 pkg 打补丁
+const WIN7_NODE = '14.17.6'
+
+const T = (target, name, engine, { exe = false, win7Arch = null } = {}) => ({
+  target,
+  name,
+  engine,
+  exe,
+  win7Arch,
+})
+
 const TARGETS = [
-  ['node22-macos-arm64', `md2html-v${pkg.version}-macos-arm64`, false, 'yao'],
-  ['node22-macos-x64', `md2html-v${pkg.version}-macos-x64`, false, 'yao'],
+  T('node22-macos-arm64', `md2html-v${pkg.version}-macos-arm64`, 'yao'),
+  T('node22-macos-x64', `md2html-v${pkg.version}-macos-x64`, 'yao'),
   // linuxstatic = musl 全静态链接，不依赖系统 glibc（Node18+ 官方基座要 glibc≥2.28，
   // CentOS 7 只有 2.17 会报 GLIBC not found）；产物可在 CentOS 7 / Alpine 等任何发行版运行
-  ['node22-linuxstatic-x64', `md2html-v${pkg.version}-linux-x64`, false, 'yao'],
-  ['node22-linux-arm64', `md2html-v${pkg.version}-linux-arm64`, false, 'yao'],
-  // Win10+：node22 基座
-  ['node22-win-x64', `md2html-v${pkg.version}-win-x64`, true, 'yao'],
-  // Win7：Node 14 是最后干净支持 Win7 的版本（18+ 完全不兼容），必须走 pkg5 旧基座
-  ['node14-win-x64', `md2html-v${pkg.version}-win7-x64`, true, 'pkg5'],
+  T('node22-linuxstatic-x64', `md2html-v${pkg.version}-linux-x64`, 'yao'),
+  T('node22-linux-arm64', `md2html-v${pkg.version}-linux-arm64`, 'yao'),
+  T('node22-win-x64', `md2html-v${pkg.version}-win-x64`, 'yao', { exe: true }),
+  T(null, `md2html-v${pkg.version}-win7-x64`, 'pkg5', { exe: true, win7Arch: 'x64' }),
+  T(null, `md2html-v${pkg.version}-win7-x86`, 'pkg5', { exe: true, win7Arch: 'x86' }),
 ]
-
-const EMBEDDED = path.join(ROOT, '../src/editor/embedded.js')
-const PLACEHOLDER = '// 由 scripts/build-bin.mjs 在打包时生成，内嵌编辑器浏览器端 bundle。\n// null = 开发模式：ui-server 启动时用本地 esbuild 现场打包。\nexport default null\n'
 
 mkdirSync(path.join(ROOT, '../build'), { recursive: true })
 mkdirSync(path.join(ROOT, '../dist'), { recursive: true })
 
 const targets = TARGETS.filter(
-  ([, name]) => wanted.length === 0 || wanted.some((w) => name.includes(w)),
+  (t) => wanted.length === 0 || wanted.some((w) => t.name.includes(w)),
 )
 if (targets.length === 0) throw new Error(`无匹配目标: ${wanted.join(', ')}`)
+
+async function win7Base(arch) {
+  const file = path.join(ROOT, `../build/node-v${WIN7_NODE}-win-${arch}.exe`)
+  if (!existsSync(file)) {
+    const url = `https://nodejs.org/dist/v${WIN7_NODE}/win-${arch}/node.exe`
+    console.error(`↓ 下载 Win7 基座 ${url}`)
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`下载失败 ${res.status}: ${url}`)
+    await pipeline(Readable.fromWeb(res.body), createWriteStream(file))
+  }
+  chmodSync(file, 0o755)
+  return file
+}
 
 // 1) 编辑器浏览器 bundle → 内嵌模块（打包产物不再依赖 esbuild 原生二进制）
 const editor = await build({
@@ -48,6 +71,8 @@ const editor = await build({
   write: false,
   logLevel: 'silent',
 })
+const EMBEDDED = path.join(ROOT, '../src/editor/embedded.js')
+const PLACEHOLDER = '// 由 scripts/build-bin.mjs 在打包时生成，内嵌编辑器浏览器端 bundle。\n// null = 开发模式：ui-server 启动时用本地 esbuild 现场打包。\nexport default null\n'
 writeFileSync(EMBEDDED, `export default ${JSON.stringify(editor.outputFiles[0].text)}\n`)
 
 try {
@@ -69,12 +94,14 @@ try {
     yao: path.join(ROOT, '../node_modules/@yao-pkg/pkg/lib-es5/bin.js'),
     pkg5: path.join(ROOT, '../node_modules/pkg/lib-es5/bin.js'),
   }
-  for (const [target, name, isWin, engine] of targets) {
-    const out = path.join(ROOT, '../dist', name + (isWin ? '.exe' : ''))
-    execFileSync(process.execPath, [ENGINES[engine], 'build/md2html.cjs', '--target', target, '--output', out], {
-      cwd: path.join(ROOT, '..'),
-      stdio: 'inherit',
-    })
+  for (const t of targets) {
+    const targetArg = t.win7Arch ? await win7Base(t.win7Arch) : t.target
+    const out = path.join(ROOT, '../dist', t.name + (t.exe ? '.exe' : ''))
+    execFileSync(
+      process.execPath,
+      [ENGINES[t.engine], 'build/md2html.cjs', '--target', targetArg, '--output', out],
+      { cwd: path.join(ROOT, '..'), stdio: 'inherit' },
+    )
     console.error(`✔ ${out}`)
   }
 } finally {
