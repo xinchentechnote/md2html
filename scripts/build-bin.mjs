@@ -2,7 +2,7 @@
 // 用法：npm run build:bin [-- macos-arm64 win-x64 ...]  不传 = 全部目标。
 import { build } from 'esbuild'
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, writeFileSync, existsSync, createWriteStream, chmodSync } from 'node:fs'
+import { mkdirSync, writeFileSync, existsSync, createWriteStream, chmodSync, statSync, renameSync, rmSync } from 'node:fs'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import path from 'node:path'
@@ -51,14 +51,40 @@ if (targets.length === 0) throw new Error(`无匹配目标: ${wanted.join(', ')}
 async function win7Base(arch) {
   const file = path.join(ROOT, `../build/node-v${WIN7_NODE}-win-${arch}.exe`)
   if (!existsSync(file)) {
-    const url = `https://nodejs.org/dist/v${WIN7_NODE}/win-${arch}/node.exe`
-    console.error(`↓ 下载 Win7 基座 ${url}`)
-    const res = await fetch(url)
-    if (!res.ok) throw new Error(`下载失败 ${res.status}: ${url}`)
-    await pipeline(Readable.fromWeb(res.body), createWriteStream(file))
+    await downloadWithRetry(
+      [
+        `https://nodejs.org/dist/v${WIN7_NODE}/win-${arch}/node.exe`,
+        `https://registry.npmmirror.com/-/binary/node/v${WIN7_NODE}/win-${arch}/node.exe`,
+      ],
+      file,
+      20 * 1024 * 1024,
+    )
   }
   chmodSync(file, 0o755)
   return file
+}
+
+/** 多源 × 3 次重试；先写 .tmp 再原子改名，避免中断留下半截文件被当成完整基座 */
+async function downloadWithRetry(urls, dest, minSize) {
+  let lastErr = new Error('无可用下载源')
+  for (const url of urls) {
+    for (let i = 1; i <= 3; i++) {
+      const tmp = `${dest}.tmp`
+      try {
+        console.error(`↓ 下载 ${url}（第 ${i} 次）`)
+        const res = await fetch(url)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        await pipeline(Readable.fromWeb(res.body), createWriteStream(tmp))
+        if (statSync(tmp).size < minSize) throw new Error('文件不完整')
+        renameSync(tmp, dest)
+        return
+      } catch (err) {
+        rmSync(tmp, { force: true })
+        lastErr = err
+      }
+    }
+  }
+  throw new Error(`下载失败: ${lastErr.message}`)
 }
 
 // 1) 编辑器浏览器 bundle → 内嵌模块（打包产物不再依赖 esbuild 原生二进制）
