@@ -13,11 +13,11 @@ import { formatDate } from './utils.js'
 export function transform(tree, options = {}) {
   const children = [...tree.children]
 
-  // 1. 首个 h1 → 标题卡
+  // 1. 首个 h1 → 标题卡；显式 title（参数/frontmatter）优先于 h1 文本
   const h1Index = children.findIndex((n) => n.type === 'heading' && n.depth === 1)
   let title = options.title
   if (h1Index >= 0) {
-    title = nodeText(children[h1Index])
+    title = title ?? nodeText(children[h1Index])
     children.splice(h1Index, 1)
   }
   const headerCard = { type: 'headerCard', title: title || '无标题', date: options.date || formatDate() }

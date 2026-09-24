@@ -28,6 +28,31 @@ cli
   .example('md2html ui article.md -t deepblue')
 
 cli
+  .command('publish <file>', '渲染并发布到公众号草稿箱（不群发，需配置凭据）')
+  .option('-t, --theme <name>', '主题')
+  .option('--title <title>', '标题（默认取文首 h1 或文件名）')
+  .option('--author <author>', '作者（默认取 frontmatter author）')
+  .option('--digest <digest>', '摘要（默认 frontmatter digest 或首段前 120 字）')
+  .option('--cover <image>', '封面：本地路径或图片 URL（默认文内第一张图）')
+  .option('--no-footer', '不追加一键三连页脚')
+  .action(async (file, options) => {
+    const { publish } = await import('../src/publish.js')
+    try {
+      const report = await publish(file, options)
+      console.error(`✔ 已存入草稿箱：${report.title}`)
+      console.error(`  草稿 media_id: ${report.mediaId}`)
+      console.error(`  正文图转存: ${report.images} 张${report.skipped.length ? `，跳过 ${report.skipped.length} 张（${report.skipped.join('、')}）` : ''}`)
+      console.error(`  凭据来源: ${report.configSource}`)
+      console.error('  到公众号后台「草稿箱」查看，确认无误后手动群发。')
+    } catch (err) {
+      console.error(`✖ 发布失败: ${err.message}`)
+      process.exitCode = 1
+    }
+  })
+  .example('md2html publish article.md -t deepblue')
+  .example('md2html publish article.md --cover ./cover.png --author 歆晨')
+
+cli
   .command('[...files]', 'Markdown → 微信公众号排版 HTML')
   .option('-t, --theme <name>', '主题 id，默认 deepblue')
   .option('-o, --out <file>', '输出路径（单文件时有效，默认同名 .html）')
@@ -46,7 +71,7 @@ cli
       process.exitCode = 1
       return
     }
-    const themeId = options.theme || 'deepblue'
+    const themeId = options.theme // 未指定时由 renderMarkdown 走 frontmatter.theme → 默认 deepblue
     const convertOne = async (file) => {
       const md = file === '-' ? await readStdin() : await readFile(file, 'utf8')
       const base = file === '-' ? 'stdin' : file.replace(/\.md$/i, '')

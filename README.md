@@ -23,6 +23,22 @@ md2html --list-themes               # 查看可用主题
 
 发布流程：打开预览页 → 点「复制到公众号」→ 公众号后台 ⌘V。
 
+## 发布到公众号草稿箱（一行命令）
+
+```bash
+# 首次配置凭据（公众号后台「设置与开发 → 基本配置」获取，IP 白名单需包含本机出口 IP）
+echo '{ "appid": "你的AppID", "secret": "你的AppSecret" }' > ~/.md2html/config.json
+# 或环境变量：export MD2HTML_APPID=xxx MD2HTML_SECRET=xxx
+
+md2html publish article.md -t deepblue             # 渲染 → 图片转存 → 写入草稿箱（不群发）
+md2html publish article.md --cover ./cover.png     # 指定封面（默认取文内第一张图）
+md2html publish article.md --author 歆晨 --digest "摘要"
+```
+
+- 正文图片自动转存微信（支持外链 URL、本地相对路径、data URI）；草稿不允许外链图，这是必须步骤；
+- 元数据支持 frontmatter：`title / author / digest / cover / theme / date / footer`，优先级 CLI 参数 > frontmatter > 自动兜底（标题取 h1/文件名，摘要取首段前 120 字）；
+- 需要**已认证**账号（未认证个人订阅号一般没有草稿/素材接口权限，报 48001 就是这个原因）；群发永远手动，在后台完成。
+
 ## 开发
 
 ```bash

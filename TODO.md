@@ -24,19 +24,15 @@
 - [ ] 编辑器升级（可选）：CodeMirror 6 语法高亮（+~300KB）
 - [ ] 可选增强：多文件/最近文件列表、localStorage 草稿、自定义主题即时预览
 
-## 远期（M5 · 一行命令进公众号草稿箱）
+## 远期（M5 · 一行命令进公众号草稿箱）✅ 已实现（2026-09-24）
 
-目标形态：`md2html publish article.md -t deepblue` → 直接出现在公众号草稿箱（不自动群发）。
-
-- [ ] 前置确认：账号是否有草稿箱 API 权限（未认证个人订阅号通常无素材/草稿接口，需认证）
-- [ ] 凭据管理：AppID/AppSecret 走环境变量或 `~/.md2html/config`（绝不入库；公众号后台需配置 IP 白名单）
-- [ ] 链路实现（微信官方 API）：
-  - [ ] `stable_token`（或 access_token）获取与缓存刷新
-  - [ ] 正文图片转存：解析 HTML 内全部 `<img>` → 下载 → `/cgi-bin/media/uploadimg` → 替换为微信 URL（草稿不允许外链图）
-  - [ ] 封面图：`/cgi-bin/material/add_material` 取 `thumb_media_id`（取文内首图或 frontmatter 指定）
-  - [ ] `POST /cgi-bin/draft/add` 写入草稿（title/author/content/digest/cover）
-- [ ] frontmatter 扩展：`author` / `digest` / `cover` / `account`
-- [ ] 失败兜底：API 不可用/未配置时回落到预览页复制粘贴流程
+- [x] 凭据：环境变量 `MD2HTML_APPID/SECRET` 或 `~/.md2html/config.json`（环境变量优先；未配置给出可操作报错 + 复制粘贴兜底提示）
+- [x] `src/wechat.js`：stable_token（缓存 + 40001/42001 强刷重试一次）、`media/uploadimg` 正文图转存、`material/add_material` 封面、`draft/add`；常见错误码中文映射（含 48001 无权限、40164 IP 白名单）
+- [x] `src/publish.js`：渲染 → 正文图转存替换（外链/本地/data URI，已是 mmbiz 跳过，>10MB 跳过并报告）→ 封面（--cover/frontmatter > 文内首图，无图报错）→ 草稿
+- [x] `md2html publish <file>`：--title/--author/--digest/--cover/-t/--no-footer
+- [x] frontmatter（M3 的一半）：title/date/theme/footer/author/digest/cover，优先级 参数 > frontmatter > 兜底；默认主题收敛到 index（deepblue）
+- [x] 测试：frontmatter 优先级、假 transport 的 token 缓存/强刷重试/错误映射、publish 全链路（data URI 转存替换、封面、字段、digest 兜底）共 28 项
+- [ ] 真实账号联调（需用户提供凭据；确认账号有草稿接口权限——未认证个人号报 48001）
 
 ## 主题扩充（P2，每套约 20 行色板）
 
