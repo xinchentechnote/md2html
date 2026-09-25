@@ -34,7 +34,8 @@ cli
   .option('--author <author>', '作者（默认取 frontmatter author）')
   .option('--digest <digest>', '摘要（默认 frontmatter digest 或首段前 120 字）')
   .option('--cover <image>', '封面：本地路径或图片 URL（默认文内第一张图）')
-  .option('--no-footer', '不追加一键三连页脚')
+  .option('--no-header', '草稿正文不含头卡（默认即剥离，此参数连 HTML 也不渲染）')
+  .option('--footer', '草稿正文附一键三连页脚（默认不追加）')
   .action(async (file, options) => {
     const { publish } = await import('../src/publish.js')
     try {
@@ -58,7 +59,8 @@ cli
   .option('-o, --out <file>', '输出路径（单文件时有效，默认同名 .html）')
   .option('--stdout', '仅输出正文 HTML 片段（管道友好）')
   .option('--open', '生成后自动打开预览页')
-  .option('--no-footer', '不追加一键三连页脚')
+  .option('--no-header', '不渲染文首标题卡（复制到公众号时本就会自动剔除）')
+  .option('--footer', '追加文末一键三连页脚（默认不追加）')
   .option('--list-themes', '列出可用主题')
   .option('-w, --watch', '监听文件变更并重新生成（单文件）')
   .action(async (files, options) => {

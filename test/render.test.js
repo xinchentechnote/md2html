@@ -6,6 +6,7 @@ import path from 'node:path'
 import { renderMarkdown, listThemes } from '../src/index.js'
 import { transform } from '../src/transform.js'
 import { parseMarkdown, nodeText } from '../src/parse.js'
+import { stripDecorations } from '../src/utils.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const sample = readFileSync(path.join(HERE, 'fixtures/sample.md'), 'utf8')
@@ -61,13 +62,15 @@ test('transform: 空行是分组边界，跨空行的单图不合并图集', () 
   assert.ok(!tree.children.some((n) => n.type === 'gallery'))
 })
 
-test('transform: h1 摘取为标题卡，默认追加页脚，footer:false 可关', () => {
-  const tree = transform(parseMarkdown('# 标题\n\n正文'), {})
-  assert.equal(tree.children[0].type, 'headerCard')
-  assert.equal(tree.children[0].title, '标题')
-  assert.equal(tree.children.at(-1).type, 'footerCard')
-  const noFooter = transform(parseMarkdown('# 标题\n\n正文'), { footer: false })
-  assert.notEqual(noFooter.children.at(-1).type, 'footerCard')
+test('transform: 头卡默认渲染，页脚默认不追加', () => {
+  const t = transform(parseMarkdown('# 标题\n\n正文'), {})
+  assert.equal(t.children[0].type, 'headerCard')
+  assert.ok(!t.children.some((n) => n.type === 'footerCard'), '页脚默认不追加')
+  const withFooter = transform(parseMarkdown('# 标题\n\n正文'), { footer: true })
+  assert.equal(withFooter.children.at(-1).type, 'footerCard')
+  const off = transform(parseMarkdown('# 标题\n\n正文'), { header: false })
+  assert.ok(!off.children.some((n) => n.type === 'headerCard'))
+  assert.ok(off.children.some((n) => n.type === 'heading' && n.depth === 1), '关闭头卡时 h1 留在正文')
 })
 
 test('render: 产出无 class/id/<style>，样式全内联', () => {
@@ -104,8 +107,26 @@ test('render: 嵌套多级列表可渲染', () => {
 })
 
 test('render: 空文档不抛错且有标题卡兜底', () => {
-  const { html } = renderMarkdown('', 'moyu', { footer: false })
+  const { html } = renderMarkdown('', 'moyu')
   assert.ok(html.includes('无标题'))
+})
+
+test('render: 头尾带标记；stripDecorations 只删指定块保留正文', () => {
+  const { html } = renderMarkdown('# 文章标题\n\n正文内容', 'moyu', { footer: true })
+  assert.ok(html.includes('data-md2html-block="header"'), '头卡有标记')
+  assert.ok(html.includes('data-md2html-block="footer"'), '页脚有标记')
+  const stripped = stripDecorations(html)
+  assert.ok(!stripped.includes('data-md2html-block'), '标记块已剔除')
+  assert.ok(!stripped.includes('三连'), '页脚不残留')
+  assert.ok(stripped.includes('正文内容'), '正文保留')
+  const onlyHeader = stripDecorations(html, ['header'])
+  assert.ok(onlyHeader.includes('三连'), '仅剥头时页脚保留')
+})
+
+test('render: --no-header 时 h1 渲染为居中标题', () => {
+  const { html } = renderMarkdown('# 文章标题\n\n正文', 'moyu', { header: false, footer: false })
+  assert.ok(!html.includes('linear-gradient'), '无头卡')
+  assert.ok(html.includes('text-align:center'), 'h1 居中')
 })
 
 test('themes: 全部主题变量完整且各具主色', () => {

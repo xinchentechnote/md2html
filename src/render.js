@@ -34,9 +34,10 @@ const BLOCK = {
     return `<section style="${s({ fontFamily: f.family, fontSize: f.base, color: c.text, lineHeight: '1.75', padding: '0', margin: '0' })}">${ctx.blocks(node.children)}</section>`
   },
 
+  // data-md2html-block 标记供「复制到公众号」与 publish 剥离头尾用（公众号粘贴时会剥未知属性，无副作用）
   headerCard: ({ title, date }, ctx) => {
     const { colors: c, font: f, radius: r } = ctx.vars
-    return `<section style="${s({ background: `linear-gradient(135deg, ${c.accentLight}, #FFFFFF)`, borderRadius: r.card, padding: '28px 20px 24px', textAlign: 'center', marginBottom: '28px' })}">` +
+    return `<section data-md2html-block="header" style="${s({ background: `linear-gradient(135deg, ${c.accentLight}, #FFFFFF)`, borderRadius: r.card, padding: '28px 20px 24px', textAlign: 'center', marginBottom: '28px' })}">` +
       `<section style="${s({ fontSize: '12px', letterSpacing: '2px', color: c.muted })}">${esc(date)}</section>` +
       `<section style="${s({ fontSize: f.title, fontWeight: '700', color: c.heading, margin: '12px 0 14px', lineHeight: '1.4' })}">${esc(title)}</section>` +
       `<section style="${s({ width: '36px', height: '4px', background: c.accent, borderRadius: '2px', margin: '0 auto' })}"></section>` +
@@ -45,6 +46,10 @@ const BLOCK = {
 
   heading: (node, ctx) => {
     const { colors: c, font: f } = ctx.vars
+    // h1 = 文章标题（头卡关闭时的默认形态）：居中大标题
+    if (node.depth === 1) {
+      return `<section style="${s({ fontSize: f.title, fontWeight: '700', color: c.heading, textAlign: 'center', margin: '0 0 24px', lineHeight: '1.4' })}">${ctx.inline(node.children)}</section>`
+    }
     if (node.depth === 2) {
       const { no, label } = node.meta
       const labelHtml = label
@@ -153,7 +158,7 @@ const BLOCK = {
           `</section>`,
       )
       .join('')
-    return `<section style="${s({ margin: '36px 0 8px', textAlign: 'center' })}">` +
+    return `<section data-md2html-block="footer" style="${s({ margin: '36px 0 8px', textAlign: 'center' })}">` +
       `<section style="${s({ fontSize: '14px', color: c.muted, marginBottom: '12px' })}">— 有收获的话，「三连」支持一下，下期再见 —</section>` +
       `<section style="${s({ display: 'flex', gap: '10px' })}">${cards}</section>` +
       `</section>`

@@ -58,6 +58,10 @@ test('publish: 全链路（外链图转存替换 / 封面上传 / 草稿字段�
     assert.ok(article.content.includes('https://mmbiz.qpic.cn/mmbiz/123.png'), '正文图已替换为微信 URL')
     assert.ok(!article.content.includes('data:image/'), 'data URI 不残留')
     assert.ok(article.content.includes('正文内容'))
+    // 草稿正文自动剥离头尾（HTML 渲染仍含，仅发往微信时剔除）
+    assert.ok(!article.content.includes('data-md2html-block'), '标记块不进草稿')
+    assert.ok(!article.content.includes('三连'), '页脚不进草稿')
+    assert.ok(!article.content.includes('linear-gradient'), '头卡不进草稿')
   } finally {
     await rm(tmp, { force: true })
   }

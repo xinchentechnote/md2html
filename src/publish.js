@@ -5,7 +5,7 @@ import { parseMarkdown, nodeText } from './parse.js'
 import { extractFrontmatter } from './frontmatter.js'
 import { loadWechatConfig } from './config.js'
 import { createWechatClient } from './wechat.js'
-import { esc } from './utils.js'
+import { esc, stripDecorations } from './utils.js'
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
@@ -23,6 +23,8 @@ export async function publish(file, options = {}, deps = {}) {
   const dir = path.dirname(mdPath)
 
   const { html, meta } = renderMarkdown(md, options.theme, { footer: options.footer })
+  // 发往微信的正文剥离头卡（标题走草稿标题字段）；页脚默认不渲染，开启时视为内容保留
+  let content = stripDecorations(html, ['header'])
   const title = options.title || meta.title || path.basename(mdPath).replace(/\.md$/i, '')
   const author = options.author || meta.author || ''
   const digest = options.digest || meta.digest || firstParagraphText(md).slice(0, 120)
@@ -32,7 +34,6 @@ export async function publish(file, options = {}, deps = {}) {
   const report = { configSource: config.source, title, digest, images: 0, skipped: [] }
 
   // 1) 正文图片转存（外链/本地/data URI → uploadimg → 替换为微信 URL）
-  let content = html
   let firstAsset = null
   for (const rawSrc of uniqueImageSources(html)) {
     const src = unescapeHtml(rawSrc)

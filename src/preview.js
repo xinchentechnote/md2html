@@ -27,13 +27,22 @@ body{margin:0;background:#EDEDED;padding:36px 16px;font-family:-apple-system,'Pi
 </div>
 <script>
 document.getElementById('copy').addEventListener('click', function () {
+  // 克隆正文并剥离头卡（标题走后台标题栏）；页脚默认不渲染，开启时视为内容一并复制
+  var article = document.getElementById('article')
+  var clone = article.cloneNode(true)
+  clone.querySelectorAll('[data-md2html-block="header"]').forEach(function (n) { n.remove() })
+  var holder = document.createElement('div')
+  holder.style.cssText = 'position:fixed;left:-9999px;top:0'
+  holder.appendChild(clone)
+  document.body.appendChild(holder)
   var range = document.createRange()
-  range.selectNodeContents(document.getElementById('article'))
+  range.selectNodeContents(clone)
   var sel = window.getSelection()
   sel.removeAllRanges()
   sel.addRange(range)
   document.execCommand('copy')
   sel.removeAllRanges()
+  holder.remove()
   this.textContent = '已复制 ✓'
   var btn = this
   setTimeout(function () { btn.textContent = '复制到公众号' }, 2000)
