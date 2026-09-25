@@ -19,26 +19,26 @@ test('frontmatter: 无头信息时原样返回', () => {
 
 test('renderMarkdown: 参数 > frontmatter > 默认值', async () => {
   const md = '---\ntitle: fm标题\ndate: 01 JAN 2025\ntheme: moyu\n---\n# 文内标题\n\n正文'
-  // 参数覆盖（footer 参数关闭）
-  const a = renderMarkdown(md, 'grape', { title: '参数标题', footer: false })
+  // 参数覆盖（footer 参数开启）
+  const a = renderMarkdown(md, 'grape', { title: '参数标题', footer: true })
   assert.equal(a.meta.title, '参数标题')
   assert.equal(a.theme.id, 'grape')
-  assert.ok(!a.html.includes('三连'), 'footer:false 参数关闭页脚')
-  // frontmatter 生效（theme/title/date），头尾默认渲染
+  assert.ok(a.html.includes('三连'), 'footer:true 参数开启页脚')
+  // frontmatter 生效（theme/title/date）；头卡默认渲染、页脚默认不追加
   const b = renderMarkdown(md)
   assert.equal(b.theme.id, 'moyu')
   assert.equal(b.meta.title, 'fm标题')
   assert.equal(b.meta.date, '01 JAN 2025')
-  assert.ok(b.html.includes('三连'), '默认含页脚')
   assert.ok(b.html.includes('linear-gradient'), '默认含头卡')
+  assert.ok(!b.html.includes('三连'), '默认无页脚')
   // 均未指定时 h1 兜底 + 默认主题 deepblue
   const c = renderMarkdown('# 兜底标题\n\nx')
   assert.equal(c.meta.title, '兜底标题')
   assert.equal(c.theme.id, 'deepblue')
-  // frontmatter 关闭头尾
-  const h = renderMarkdown('---\nheader: false\nfooter: false\n---\n# 头卡标题\n\nx')
+  // frontmatter：header:false 关头卡，footer:true 开页脚
+  const h = renderMarkdown('---\nheader: false\nfooter: true\n---\n# 头卡标题\n\nx')
   assert.ok(!h.html.includes('linear-gradient'), 'header:false 无头卡')
-  assert.ok(!h.html.includes('三连'), 'footer:false 无页脚')
+  assert.ok(h.html.includes('三连'), 'footer:true 有页脚')
   assert.ok(h.html.includes('text-align:center'), 'h1 以居中标题渲染')
   // frontmatter 元信息透出
   const d = renderMarkdown('---\nauthor: 歆晨\ndigest: 摘要\ncover: ./c.png\n---\n\nx')

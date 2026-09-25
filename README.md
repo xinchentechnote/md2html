@@ -8,16 +8,17 @@ Markdown → 微信公众号排版 HTML 的 CLI 工具：主题化、样式全�
 npm install
 npm link            # 全局命令 md2html
 
-md2html article.md                  # → article.html（完整排版：头卡+页脚都在）
+md2html article.md                  # → article.html（含头卡；一键三连页脚默认不追加）
 md2html article.md -t moyu --open   # 指定主题并自动打开预览
+md2html article.md --footer         # 需要时追加文末一键三连页脚
 md2html article.md -w --open        # 监听变更实时重新生成
 md2html ui article.md -t deepblue   # 浏览器编辑器：编辑+实时预览+⌘S保存+一键复制
-md2html article.md --stdout         # 仅输出正文 HTML 片段（完整含头尾）
-md2html article.md --no-header --no-footer  # 连 HTML 也不渲染头尾
+md2html article.md --stdout         # 仅输出正文 HTML 片段
+md2html article.md --no-header      # 连头卡也不渲染
 md2html --list-themes               # 查看可用主题
 ```
 
-「复制到公众号」按钮复制的内容**自动剔除头卡与页脚**（公众号标题走后台标题栏）——预览页所见是完整排版，粘贴到后台的只有正文。`publish` 草稿同理。
+「复制到公众号」与 `publish` 草稿**自动剔除头卡**（公众号标题走后台标题栏）；一键三连页脚默认不追加，`--footer` 或 frontmatter `footer: true` 开启后视为正文内容一并复制/发布。
 
 浏览器编辑器（`md2html ui`）：左编辑右预览、主题即时切换（记忆在浏览器）、⌘S 保存回原文件、"复制到公众号"一键富文本复制；服务仅绑定 127.0.0.1，只读写启动时指定的那个文件。
 
@@ -39,7 +40,7 @@ md2html publish article.md --author 歆晨 --digest "摘要"
 
 - 正文图片自动转存微信（支持外链 URL、本地相对路径、data URI）；草稿不允许外链图，这是必须步骤；
 - 元数据支持 frontmatter：`title / author / digest / cover / theme / date / header / footer`，优先级 CLI 参数 > frontmatter > 自动兜底（标题取 h1/文件名，摘要取首段前 120 字）；
-- **草稿正文自动剥离头卡与页脚**（与复制按钮一致）；`--no-header` / `--no-footer` 可连 HTML 渲染一并去掉；
+- **草稿正文自动剥离头卡**（与复制按钮一致）；一键三连页脚默认不追加，`--footer` 开启后会随草稿发布；
 - 需要**已认证**账号（未认证个人订阅号一般没有草稿/素材接口权限，报 48001 就是这个原因）；群发永远手动，在后台完成。
 
 ## 开发
