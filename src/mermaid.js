@@ -10,7 +10,39 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { s, findSectionEnd } from './utils.js'
 
-const HERE = path.dirname(fileURLToPath(import.meta.url))
+export function resolveModuleDir(metaUrl = import.meta.url, argv = process.argv) {
+  if (typeof __dirname === 'string' && __dirname) return __dirname
+
+  const resolvedUrl =
+    metaUrl && (typeof metaUrl === 'string' || typeof metaUrl === 'object') ? metaUrl : undefined
+
+  try {
+    if (resolvedUrl && typeof resolvedUrl === 'string' && resolvedUrl.startsWith('file:')) {
+      return path.dirname(fileURLToPath(resolvedUrl))
+    }
+    if (resolvedUrl && typeof resolvedUrl === 'object' && resolvedUrl.href) {
+      return path.dirname(fileURLToPath(resolvedUrl))
+    }
+  } catch {
+    // pkg/CJS 运行时中 import.meta.url 可能为 undefined，不抛错并走 argv 回退
+  }
+
+  const candidates = (argv || []).filter((arg) => {
+    if (typeof arg !== 'string' || !arg || arg.startsWith('-') || arg.startsWith('node:')) return false
+    if (arg === process.execPath) return false
+    const base = path.basename(arg)
+    return !/^(?:node|nodejs|iojs)(?:\.exe)?$/i.test(base)
+  })
+
+  const appArg = candidates.find((arg) => !/\.(?:[cm]?js|mjs|cjs)$/i.test(arg)) || candidates[0]
+  if (appArg) {
+    const base = path.resolve(appArg)
+    return path.dirname(base)
+  }
+  return process.cwd()
+}
+
+const HERE = resolveModuleDir()
 const MMDC = path.join(HERE, '../node_modules/.bin', process.platform === 'win32' ? 'mmdc.cmd' : 'mmdc')
 
 export async function inlineMermaid(html, { engine = 'auto', vars, scale = 2, renderPng } = {}) {

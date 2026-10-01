@@ -7,6 +7,7 @@ import { renderMarkdown, listThemes } from '../src/index.js'
 import { transform } from '../src/transform.js'
 import { parseMarkdown, nodeText } from '../src/parse.js'
 import { stripDecorations } from '../src/utils.js'
+import { resolveModuleDir } from '../src/mermaid.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const sample = readFileSync(path.join(HERE, 'fixtures/sample.md'), 'utf8')
@@ -127,6 +128,11 @@ test('render: --no-header 时 h1 渲染为居中标题', () => {
   const { html } = renderMarkdown('# 文章标题\n\n正文', 'moyu', { header: false, footer: false })
   assert.ok(!html.includes('linear-gradient'), '无头卡')
   assert.ok(html.includes('text-align:center'), 'h1 居中')
+})
+
+test('mermaid: 非 file URL 时可用 argv 回退解析目录', () => {
+  const here = resolveModuleDir('https://example.test/app.js', ['/usr/bin/node', '/tmp/md2html/dist/md2html-linux-arm64'])
+  assert.equal(here, '/tmp/md2html/dist')
 })
 
 test('themes: 全部主题变量完整且各具主色', () => {
