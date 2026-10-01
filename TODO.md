@@ -3,12 +3,22 @@
 > 执行跟踪清单；技术方案与组件规格见 [docs/DESIGN.md](docs/DESIGN.md)。
 > 已完成：M0 骨架与验收样例 / M1 核心渲染器 + 摸鱼绿 + CLI / M2 六套主题 + --watch + 边缘处理（17/17 测试绿）。
 
-## 近期（M3 · 元数据与公式）
+## 近期（M6 · 图表与公式）
 
-- [ ] frontmatter 支持：`title` / `date` / `theme` / `footer`（`remark-frontmatter`；优先级 frontmatter > CLI > 默认）
-- [ ] 数学公式：`remark-math` + KaTeX 渲染 SVG 图片
-  - [ ] 先调研公众号对 `data:` URI 与外链图片的实际处理，确定图片落地方式
-- [ ] CLI：`--theme` 与 frontmatter theme 的冲突提示
+Mermaid/数学公式在公众号唯一可靠形态是渲染成图片（编辑器不执行 JS、剥 SVG 内样式）：
+- [x] 解析层：`lang=mermaid` 代码块 → 自定义 `mermaidBlock` 节点（2026-09-25 完成）
+- [x] 转换期渲染成图片内嵌 HTML（data URI 单文件自包含）：引擎 `--mermaid auto|ink|mmdc|off`
+  - auto：本地 mmdc（未装跳过，主题色联动 designVars）→ mermaid.ink 在线（base64url + 必须尾换行 + 无 scale，踩坑已记录）→ 失败保留主题色代码卡
+  - 浏览器视觉验证通过（中文无乱码、白色圆角卡居中）；35/35 测试绿
+- [ ] publish 路径：mermaid 渲染 PNG → uploadimg 转存（复用图片管线，发布场景启动时）
+- [ ] 可选 `--mermaid kroki`（另一渲染服务备选）
+- [ ] 数学公式同管线：remark-math + KaTeX SVG（共享"渲染成图→转存→替换"基础设施）
+- [x] 编辑器（md2html ui）mermaid 实时预览：走本地服务 `/api/mermaid` 端点（与 CLI 同引擎链，预览与产出严格一致；hydrate 带缓存与过期请求丢弃），`--mermaid off` 可关；浏览器 e2e 验证通过（编辑源码 → 图实时更新，中英文无乱码）
+
+## 近期（M3 · 元数据）✅ 已实现（随 M5 完成）
+
+- [x] frontmatter：`title / date / theme / header / footer / author / digest / cover`，优先级 参数 > frontmatter > 兜底
+- [x] 数学公式移入 M6（与 Mermaid 共享"渲染成图 → 转存 → 替换"管线）
 
 ## 之后（M4 · 浏览器编辑器，实时预览）
 

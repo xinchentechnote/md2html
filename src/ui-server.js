@@ -2,6 +2,8 @@ import http from 'node:http'
 import { readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import embeddedEditor from './editor/embedded.js'
+import { renderMermaidPng } from './mermaid.js'
+import { getTheme } from '../themes/index.js'
 
 const PAGE = `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -54,7 +56,7 @@ main{flex:1;display:flex;min-height:0}
  * 不接受任意路径读写。GET / 页面、GET /editor.js 打包产物、
  * GET /api/state 初始内容、PUT /api/file 保存。
  */
-export async function startEditorServer({ file, theme } = {}) {
+export async function startEditorServer({ file, theme, mermaid = 'auto', mermaidRenderer = renderMermaidPng } = {}) {
   const js =
     embeddedEditor ??
     (await bundleEditorRuntime().catch((err) => {
@@ -79,7 +81,35 @@ export async function startEditorServer({ file, theme } = {}) {
             content = ''
           }
         }
-        return send(200, 'application/json; charset=utf-8', JSON.stringify({ file, content, theme }))
+        return send(200, 'application/json; charset=utf-8', JSON.stringify({ file, content, theme, mermaid }))
+      }
+      if (req.method === 'POST' && url.pathname === '/api/mermaid') {
+        const chunks = []
+        for await (const chunk of req) chunks.push(chunk)
+        const body = Buffer.concat(chunks).toString('utf8')
+        if (body.length > 128 * 1024) return send(413, 'application/json; charset=utf-8', '{"error":"diagram too large"}')
+        let parsed
+        try {
+          parsed = JSON.parse(body)
+        } catch {
+          return send(400, 'application/json; charset=utf-8', '{"error":"invalid json"}')
+        }
+        if (typeof parsed.code !== 'string' || !parsed.code.trim()) {
+          return send(400, 'application/json; charset=utf-8', '{"error":"no code"}')
+        }
+        if (mermaid === 'off') return send(400, 'application/json; charset=utf-8', '{"error":"mermaid disabled"}')
+        let vars
+        try {
+          vars = getTheme(parsed.theme || theme || 'deepblue').vars
+        } catch {
+          vars = undefined
+        }
+        try {
+          const png = await mermaidRenderer(parsed.code, { engine: mermaid, vars })
+          return send(200, 'application/json; charset=utf-8', JSON.stringify({ png: png.toString('base64') }))
+        } catch (err) {
+          return send(422, 'application/json; charset=utf-8', JSON.stringify({ error: String(err?.message || err) }))
+        }
       }
       if (req.method === 'PUT' && url.pathname === '/api/file') {
         if (!file) return send(400, 'application/json; charset=utf-8', '{"error":"no file"}')

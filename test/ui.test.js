@@ -43,3 +43,39 @@ test('ui server: 未指定文件时禁止写入', async () => {
     server.close()
   }
 })
+
+test('ui server: /api/mermaid 渲染端点（成功/语法错/空代码）', async () => {
+  const { server, url } = await startEditorServer({
+    mermaidRenderer: async (code) => {
+      if (code.includes('BAD')) throw new Error('diagram syntax error')
+      return Buffer.from('fake-png:' + code.length)
+    },
+  })
+  try {
+    const ok = await fetch(`${url}/api/mermaid`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ code: 'graph TD\nA-->B', theme: 'moyu' }),
+    })
+    assert.equal(ok.status, 200)
+    const j = await ok.json()
+    assert.equal(j.png, Buffer.from('fake-png:14').toString('base64'))
+
+    const bad = await fetch(`${url}/api/mermaid`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ code: 'BAD diagram' }),
+    })
+    assert.equal(bad.status, 422)
+    assert.ok((await bad.json()).error.includes('syntax'))
+
+    const empty = await fetch(`${url}/api/mermaid`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ code: '   ' }),
+    })
+    assert.equal(empty.status, 400)
+  } finally {
+    server.close()
+  }
+})

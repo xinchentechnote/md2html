@@ -31,28 +31,31 @@ export function formatDate(date = new Date()) {
 export function stripDecorations(html, blocks = ['header', 'footer']) {
   let out = html
   for (const block of blocks) {
-    out = stripMarkedSection(out, `<section data-md2html-block="${block}"`)
+    const start = out.indexOf(`<section data-md2html-block="${block}"`)
+    const end = findSectionEnd(out, start)
+    if (end === -1) continue
+    out = out.slice(0, start) + out.slice(end)
   }
   return out
 }
 
-function stripMarkedSection(html, openTag) {
-  const start = html.indexOf(openTag)
-  if (start === -1) return html
+/** 找到 start 位置起始的 <section ...> 的配对闭合标签结束下标（按嵌套深度扫描） */
+export function findSectionEnd(html, start) {
+  if (start === -1) return -1
   let i = html.indexOf('>', start) + 1
   let depth = 1
   while (i < html.length) {
     const open = html.indexOf('<section', i)
     const close = html.indexOf('</section>', i)
-    if (close === -1) return html
+    if (close === -1) return -1
     if (open !== -1 && open < close) {
       depth++
       i = open + '<section'.length
       continue
     }
     depth--
-    if (depth === 0) return html.slice(0, start) + html.slice(close + '</section>'.length)
+    if (depth === 0) return close + '</section>'.length
     i = close + '</section>'.length
   }
-  return html
+  return -1
 }

@@ -6,6 +6,7 @@ import { cac } from 'cac'
 import { renderMarkdown, listThemes } from '../src/index.js'
 import { previewPage } from '../src/preview.js'
 import { openBrowser } from '../src/open-browser.js'
+import { inlineMermaid } from '../src/mermaid.js'
 // JSON 导入会被 esbuild 构建时内联。不能用 createRequire(import.meta.url)：
 // 那在 pkg 打包产物的 CJS 沙箱里 import.meta.url 为 undefined，启动即崩
 import pkg from '../package.json' with { type: 'json' }
@@ -15,12 +16,14 @@ const cli = cac('md2html')
 cli
   .command('ui [file]', '浏览器编辑器：编辑 md 实时预览、⌘S 保存、一键复制')
   .option('-t, --theme <name>', '默认主题（页面内可随时切换）')
+  .option('--mermaid <engine>', 'mermaid 引擎：auto（mmdc → ink）| ink | mmdc | off')
   .option('--no-open', '启动后不自动打开浏览器')
   .action(async (file, options) => {
     const { startEditorServer } = await import('../src/ui-server.js')
     const { url } = await startEditorServer({
       file: file ? path.resolve(file) : undefined,
       theme: options.theme,
+      mermaid: options.mermaid || 'auto',
     })
     console.error(`✔ 编辑器已启动: ${url}（Ctrl+C 退出）`)
     if (options.open !== false) openBrowser(url)
@@ -62,6 +65,7 @@ cli
   .option('--no-header', '不渲染文首标题卡（复制到公众号时本就会自动剔除）')
   .option('--footer', '追加文末一键三连页脚（默认不追加）')
   .option('--list-themes', '列出可用主题')
+  .option('--mermaid <engine>', 'mermaid 渲染引擎：auto（本地 mmdc → 在线 ink）| ink | mmdc | off', { default: 'auto' })
   .option('-w, --watch', '监听文件变更并重新生成（单文件）')
   .action(async (files, options) => {
     if (options.listThemes) {
@@ -77,13 +81,20 @@ cli
     const convertOne = async (file) => {
       const md = file === '-' ? await readStdin() : await readFile(file, 'utf8')
       const base = file === '-' ? 'stdin' : file.replace(/\.md$/i, '')
-      const { html, theme, meta } = renderMarkdown(md, themeId, { footer: options.footer })
+      const { html, theme, meta } = renderMarkdown(md, themeId, {
+        footer: options.footer,
+        header: options.header,
+      })
+      const finalHtml = await inlineMermaid(html, {
+        engine: options.mermaid || 'auto',
+        vars: theme.vars,
+      })
       if (options.stdout) {
-        console.log(html)
+        console.log(finalHtml)
         return null
       }
       const out = files.length === 1 && options.out ? options.out : `${base}.html`
-      await writeFile(out, previewPage(html, { themeName: theme.name }), 'utf8')
+      await writeFile(out, previewPage(finalHtml, { themeName: theme.name }), 'utf8')
       console.error(`✔ ${file} → ${out}（主题: ${theme.name}${meta.title ? ` · ${meta.title}` : ''}）`)
       return out
     }

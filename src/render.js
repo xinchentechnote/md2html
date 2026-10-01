@@ -164,6 +164,13 @@ const BLOCK = {
       `</section>`
   },
 
+  // mermaid 兜底形态：主题色代码卡 + base64 标记；inlineMermaid 后处理成功时整块替换为图片
+  mermaidBlock: (node, ctx) => {
+    const bytes = new TextEncoder().encode(node.code)
+    const b64 = btoa(String.fromCharCode(...bytes))
+    return `<section data-md2html-mermaid="${b64}">${BLOCK.code(node.original, ctx)}</section>`
+  },
+
   // md 里的原生 HTML 片段直接丢弃，避免把未内联的标签带进公众号
   html: () => '',
 }

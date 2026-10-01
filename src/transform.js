@@ -64,5 +64,14 @@ export function transform(tree, options = {}) {
   // 4. 页脚默认不追加：--footer / frontmatter footer:true 开启（开启即视为内容，复制/发布保留）
   if (options.footer) grouped.push({ type: 'footerCard' })
 
+  // 5. mermaid 代码块 → mermaidBlock（渲染层给"代码卡+标记"兜底形态，后处理换成图片）
+  for (const node of grouped) {
+    if (node.type === 'code' && (node.lang || '').split(/\s+/)[0] === 'mermaid') {
+      node.type = 'mermaidBlock'
+      node.code = node.value
+      node.original = { type: 'code', lang: 'mermaid', value: node.value }
+    }
+  }
+
   return { ...tree, children: grouped }
 }

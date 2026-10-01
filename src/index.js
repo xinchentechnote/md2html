@@ -28,7 +28,7 @@ export function renderMarkdown(md, themeId, options = {}) {
   const h1 = tree.children.find((n) => n.type === 'heading' && n.depth === 1)
   return {
     html,
-    theme: { id: theme.id, name: theme.name },
+    theme: { id: theme.id, name: theme.name, vars: theme.vars },
     meta: {
       // 显式 title/frontmatter 优先，h1 仅兜底（header 开启时头卡已按此规则定题）
       title: header?.title ?? resolved.title ?? (h1 ? nodeText(h1) : undefined),
