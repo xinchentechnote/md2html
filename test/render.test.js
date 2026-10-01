@@ -132,7 +132,8 @@ test('render: --no-header 时 h1 渲染为居中标题', () => {
 
 test('mermaid: 非 file URL 时可用 argv 回退解析目录', () => {
   const here = resolveModuleDir('https://example.test/app.js', ['/usr/bin/node', '/tmp/md2html/dist/md2html-linux-arm64'])
-  assert.equal(here, '/tmp/md2html/dist')
+  const base = path.normalize('/tmp/md2html/dist')
+  assert.equal(path.normalize(here), base)
 })
 
 test('themes: 全部主题变量完整且各具主色', () => {
