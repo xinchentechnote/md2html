@@ -87,11 +87,12 @@ test('render: 代码块逐行 span 且保留高亮色', () => {
   assert.ok(html.includes('#CE9178'), '字符串应有高亮色')
 })
 
-test('render: 宽表格降级为逐行卡片，窄表格保留 table', () => {
-  const wide = renderMarkdown('| a | b | c | d |\n| --- | --- | --- | --- |\n| 1 | 2 | 3 | 4 |', 'moyu', { footer: false })
-  assert.ok(!wide.html.includes('<table'), '4 列表格应降级')
-  const narrow = renderMarkdown('| a | b | c |\n| --- | --- | --- |\n| 1 | 2 | 3 |', 'moyu', { footer: false })
-  assert.ok(narrow.html.includes('<table'), '3 列表格应保留 table')
+test('render: 任意宽度表格都保持真实 table 形态', () => {
+  const wide = renderMarkdown('| a | b | c | d |\n| --- | --- | --- | --- |\n| 1 | 2 | 3 | 4 |', 'moyu', { header: false })
+  assert.ok(wide.html.includes('<table'), '4 列表格仍是 table（不做卡片降级）')
+  assert.ok(wide.html.includes('<th'), '表头单元格存在')
+  const narrow = renderMarkdown('| a | b | c |\n| --- | --- | --- |\n| 1 | 2 | 3 |', 'moyu', { header: false })
+  assert.ok(narrow.html.includes('<table'), '3 列表格保留 table')
 })
 
 test('render: 段落与单元格长词换行保护', () => {

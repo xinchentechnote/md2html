@@ -1,6 +1,5 @@
 import { createLowlight, common } from 'lowlight'
 import { esc, s } from './utils.js'
-import { nodeText } from './parse.js'
 
 const lowlight = createLowlight(common)
 
@@ -102,9 +101,6 @@ const BLOCK = {
     const { colors: c, border } = ctx.vars
     const align = node.align || []
     const [head, ...body] = node.children
-    const labels = head ? head.children.map((cell) => nodeText(cell)) : []
-    // 公众号正文不支持横向滚动：列数多或表头过长时降级为逐行卡片
-    if (labels.length >= 4 || labels.join('').length >= 14) return wideTableCards(labels, body, ctx)
     const cell = (cellNode, index, header) =>
       `<t${header ? 'h' : 'd'} style="${s({ padding: '8px 12px', border: `1px solid ${border ?? c.border}`, textAlign: align[index] || 'left', fontSize: '14px', color: header ? c.accent : c.text, fontWeight: header ? '700' : '400', background: header ? c.accentLight : 'transparent', overflowWrap: 'break-word' })}">${ctx.inline(cellNode.children)}</t${header ? 'h' : 'd'}>`
     const headRow = head ? `<thead><tr>${head.children.map((cellNode, i) => cell(cellNode, i, true)).join('')}</tr></thead>` : ''
@@ -221,24 +217,6 @@ function listBody(item, ctx) {
   return item.children
     .map((n) => blockNode(n, deriveCtx(ctx, { tight: true, listDepth: (ctx.listDepth || 0) + 1 })))
     .join('')
-}
-
-/** 宽表降级：每行一张卡，表头作为字段标签（公众号不支持横向滚动） */
-function wideTableCards(labels, rows, ctx) {
-  const { colors: c } = ctx.vars
-  const cards = rows
-    .map((row) => {
-      const fields = row.children
-        .map((cellNode, i) =>
-          `<section style="${s({ display: 'flex', gap: '8px', fontSize: '14px', lineHeight: '1.6', marginBottom: i === row.children.length - 1 ? '0' : '4px' })}">` +
-          `<span style="${s({ flexShrink: 0, minWidth: '4em', fontSize: '12px', fontWeight: '700', color: c.accent, paddingTop: '2px' })}">${esc(labels[i] || '')}</span>` +
-          `<section style="${s({ flex: '1', minWidth: '0', color: c.text, overflowWrap: 'break-word' })}">${ctx.inline(cellNode.children)}</section>` +
-          `</section>`)
-        .join('')
-      return `<section style="${s({ background: c.cardBg, borderRadius: '8px', padding: '10px 14px', marginBottom: '8px' })}">${fields}</section>`
-    })
-    .join('')
-  return `<section style="${s({ margin: '16px 0' })}">${cards}</section>`
 }
 
 /** 语法高亮 → 逐行 span；跨行 token 通过颜色栈携带，保证行结构在公众号不丢 */
