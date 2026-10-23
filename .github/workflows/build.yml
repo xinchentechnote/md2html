@@ -57,6 +57,9 @@ jobs:
         with:
           name: md2html-${{ matrix.artifact }}
           path: dist/*
+          # 默认 90 天保留曾把账户 Actions 存储配额（free 全账户共 500MB）
+          # 顶到超限；产物按周构建滚动即可，Release 挂载不受此影响
+          retention-days: 7
 
   # 打 v* tag 时，把各平台产物挂到 GitHub Release
   release:
