@@ -57,6 +57,10 @@ jobs:
         with:
           name: md2html-${{ matrix.artifact }}
           path: dist/*
+          # 默认 90 天保留曾累积 2.2GB，把账户 Actions 存储配额（free 全账户
+          # 共 500MB）顶到超限，殃及其他仓库上传。~0.8 次/天 × 4 平台 × ~26MB，
+          # 3 天保留常驻 ~250MB；Release 挂载不受此影响
+          retention-days: 3
 
   # 打 v* tag 时，把各平台产物挂到 GitHub Release
   release:
