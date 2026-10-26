@@ -153,13 +153,21 @@ async function save() {
 }
 
 function copyArticle() {
+  // 与预览页/publish 一致：剥离头卡（标题走公众号后台标题栏）；页脚开启时视为内容一并复制
+  const clone = $('preview').cloneNode(true)
+  clone.querySelectorAll('[data-md2html-block="header"]').forEach((n) => n.remove())
+  const holder = document.createElement('div')
+  holder.style.cssText = 'position:fixed;left:-9999px;top:0'
+  holder.appendChild(clone)
+  document.body.appendChild(holder)
   const range = document.createRange()
-  range.selectNodeContents($('preview'))
+  range.selectNodeContents(clone)
   const sel = window.getSelection()
   sel.removeAllRanges()
   sel.addRange(range)
   document.execCommand('copy')
   sel.removeAllRanges()
+  holder.remove()
   const btn = $('copy')
   btn.textContent = '已复制 ✓'
   setTimeout(() => (btn.textContent = '复制到公众号'), 2000)

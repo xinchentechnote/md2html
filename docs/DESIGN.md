@@ -65,7 +65,7 @@ md 文件 ──CLI──▶ parse ──▶ mdast ──▶ transform ──▶
 
 1. **core 是纯函数**：`renderMarkdown(mdString, themeId, options) → { articleHtml, meta }`。不读文件、不写文件、无副作用，Node 与浏览器通用。CLI 与二期 UI 都是它的薄壳。
 2. **样式 100% 内联**：产出 HTML 中没有 `<style>`/`<script>`（预览壳除外）、没有 class/id，每块样式都在 `style` 属性上。
-3. **结构性效果在 AST 层做**：章节编号、图集、金句卡、页脚——CSS 计数器/grid 在公众号全失效，这些必须在渲染时生成真实结构。
+3. **结构性效果在 AST 层做**：章节编号、图集、引用卡、页脚——CSS 计数器/grid 在公众号全失效，这些必须在渲染时生成真实结构。
 
 ---
 
@@ -128,10 +128,10 @@ md2html/
 | h3/h4 | 主题色左侧竖条 + 粗体，字号递减 |
 | 段落 p | 基础字号 15px，行高 1.75，两端对齐，段间距 10px |
 | strong | 主题色加粗 |
-| em | 常规斜体（金句卡内：黄色底纹高亮，见 blockquote） |
+| em | 常规斜体 |
 | 行内代码 | 主题色浅底圆角 `<code style>` |
 | 代码块 | 深色圆角卡（codeBg），文件名行（可选），逐行 span；`white-space:pre-wrap;word-break:break-all` 防长行溢出；lowlight 语法着色内联 |
-| blockquote（金句卡） | 虚线边框圆角卡、居中粗体；卡内 `**关键词**` 渲染为高亮色"底纹+下划线" |
+| blockquote（引用卡） | `accentLight` 底 + `4px solid accent` 左竖条、8px 圆角；文字左对齐常规字重 |
 | 列表 | 有序：浅底圆角卡 + 主题色圆形序号；无序：主题色圆点；任务：☑/☐ + 勾选置灰删除线；嵌套逐级缩进 1.5em |
 | 任务列表 | ☑/☐ 字符 + 删除线（GFM checked） |
 | 表格 | 真实 `<table>` 内联边框，表头主题色浅底，**任意列数都保持表格形态**（2026-09-26 决策：移除宽表卡片降级；单元格 overflow-wrap 防长词溢出） |
@@ -157,7 +157,7 @@ export default {
     colors: {
       accent: '#07C160', accentLight: '#E8F8EF',
       heading: '#1A1A1A', text: '#3F3F3F', muted: '#9CA3AF',
-      highlight: '#FFE58F',                 // 金句高亮
+      highlight: '#FFE58F',                 // 高亮色（保留字段，当前渲染未使用）
       cardBg: '#F6F8FA', border: '#E5E7EB',
       codeBg: '#1E1E1E', codeText: '#D4D4D4',
     },
@@ -243,7 +243,7 @@ macOS 附加路径（二期可选）：`textutil -convert rtf -stdout | pbcopy` 
 | M3 | frontmatter（title/date/theme/footer）+ remark-math → KaTeX SVG | 元数据可覆盖 CLI；公式在公众号显示为图片 |
 | M4 | UI 编辑器（单文件 editor.html） | 双击可用；实时预览 + 复制成功 |
 
-**人工粘贴 checklist（每主题跑一遍）**：标题层级、段落、粗斜体、行内代码、代码块行结构、金句卡、两种列表、表格、分割线、单图/图集、页脚三连。
+**人工粘贴 checklist（每主题跑一遍）**：标题层级、段落、粗斜体、行内代码、代码块行结构、引用卡、两种列表、表格、分割线、单图/图集、页脚三连。
 
 ---
 

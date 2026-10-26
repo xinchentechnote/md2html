@@ -71,15 +71,15 @@ const BLOCK = {
   paragraph: (node, ctx) => {
     const { colors: c, font: f, spacing: sp } = ctx.vars
     if (ctx.inQuote) {
-      return `<p style="${s({ fontSize: f.base, fontWeight: '600', color: c.heading, lineHeight: '1.9', margin: '0', textAlign: 'center' })}">${ctx.inline(node.children)}</p>`
+      return `<p style="${s({ fontSize: f.base, color: c.text, lineHeight: '1.8', margin: '0', textAlign: 'justify', overflowWrap: 'break-word' })}">${ctx.inline(node.children)}</p>`
     }
     return `<p style="${s({ fontSize: f.base, color: ctx.taskDone ? c.muted : c.text, lineHeight: '1.75', margin: ctx.tight ? '0' : `0 0 ${sp.paragraph}`, textAlign: 'justify', overflowWrap: 'break-word' })}">${ctx.inline(node.children)}</p>`
   },
 
   blockquote: (node, ctx) => {
-    const { colors: c, radius: r } = ctx.vars
+    const { colors: c } = ctx.vars
     const quoteCtx = deriveCtx(ctx, { inQuote: true })
-    return `<section style="${s({ border: `1.5px dashed ${c.accent}`, borderRadius: r.card, padding: '18px 22px', margin: '20px 0' })}">${node.children.map((n) => blockNode(n, quoteCtx)).join('')}</section>`
+    return `<section style="${s({ background: c.accentLight, borderLeft: `4px solid ${c.accent}`, borderRadius: '8px', padding: '14px 18px', margin: '20px 0' })}">${node.children.map((n) => blockNode(n, quoteCtx)).join('')}</section>`
   },
 
   code: (node, ctx) => {
@@ -257,10 +257,7 @@ const INLINE = {
   text: (node) => esc(node.value),
   strong: (node, ctx) => {
     const { colors: c } = ctx.vars
-    const style = ctx.inQuote
-      ? { fontWeight: '700', color: c.heading, background: `linear-gradient(180deg, transparent 62%, ${c.highlight} 62%)` }
-      : { fontWeight: '700', color: c.accent }
-    return `<span style="${s(style)}">${ctx.inline(node.children)}</span>`
+    return `<span style="${s({ fontWeight: '700', color: c.accent })}">${ctx.inline(node.children)}</span>`
   },
   emphasis: (node, ctx) => `<em style="font-style:italic">${ctx.inline(node.children)}</em>`,
   inlineCode: (node, ctx) => {
